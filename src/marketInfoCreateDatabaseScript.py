@@ -2,22 +2,58 @@ import mysql.connector
 from mysql.connector import errorcode
 DB_NAME = 'stockSim'
 TABLES = {}
-TABLES['nasdaqCompanyInfo'] = (
-    "CREATE TABLE `nasdaqCompanyInfo` ("
-    "  `symbol` varchar(8) NOT NULL,"
-    "  `name` varchar(255) NOT NULL,"
-    "  `sector` varchar(255),"
-    "  `industry` varchar(255),"
-    "  PRIMARY KEY (`symbol`)"
+TABLES['NasdaqCompanyInfo'] = (
+    "CREATE TABLE NasdaqCompanyInfo ("
+    "  symbol varchar(8) NOT NULL,"
+    "  name varchar(255) NOT NULL,"
+    "  sector varchar(255),"
+    "  industry varchar(255),"
+    "  PRIMARY KEY (symbol)"
     ") ENGINE=InnoDB")
-TABLES['nyseCompanyInfo'] = (
-    "CREATE TABLE `nyseCompanyInfo` ("
-    "  `symbol` varchar(16) NOT NULL,"
-    "  `name` varchar(255) NOT NULL,"
-    "  `sector` varchar(255),"
-    "  `industry` varchar(255),"
-    "  PRIMARY KEY (`symbol`)"
+TABLES['NyseCompanyInfo'] = (
+    "CREATE TABLE NyseCompanyInfo ("
+    "  symbol varchar(16) NOT NULL,"
+    "  name varchar(255) NOT NULL,"
+    "  sector varchar(255),"
+    "  industry varchar(255),"
+    "  PRIMARY KEY (symbol)"
     ") ENGINE=InnoDB")
+TABLES['Users'] = (
+    "CREATE TABLE Users ("
+    "  email varchar(255) NOT NULL,"
+    "  name varchar(255) NOT NULL,"
+    "  accountBalance DECIMAL(14,2) NOT NULL,"
+    "  password varchar(255) NOT NULL,"
+    "  PRIMARY KEY (email),"
+    "  CONSTRAINT Valid_Email CHECK(email LIKE \"%_@%__.__%\"),"
+    "  CONSTRAINT Acct_Bal_Not_Neg CHECK(accountBalance >= 0)"
+    ") ENGINE=InnoDB")
+TABLES['Roles'] = (
+    "CREATE TABLE Roles("
+    " role varchar(255) NOT NULL,"
+    " description varchar(255) NOT NULL,"
+    " PRIMARY KEY (role)"
+    ") ENGINE=InnoDB")
+TABLES['UserRoles'] = (
+    "CREATE TABLE UserRoles("
+    " email varchar(255) NOT NULL,"
+    " userRole varchar(255) NOT NULL,"
+    " PRIMARY KEY (email),"
+    " FOREIGN KEY (email) REFERENCES Users(email),"
+    " FOREIGN KEY (userRole) REFERENCES Roles(role)"
+    ") ENGINE=InnoDB;")
+
+SCRIPTS= {}
+SCRIPTS['CreateRoles'] = (
+    "INSERT INTO Roles (role,description) VALUES "
+    "('admin','website administrator'),('user','a standard user');")
+SCRIPTS['InsertAdmins'] = (
+    "INSERT into Users ("
+    "email,name,accountBalance,password) "
+    "VALUES ('bellmj@g.cofc.edu','Matt Bell',0.00,'password');")
+SCRIPTS['InsertAdminsRoles'] = (
+    "INSERT INTO UserRoles (email,userRole) "
+    "VALUES ('bellmj@g.cofc.edu','admin');")
 
 
 def main():
@@ -50,13 +86,21 @@ def main():
     except mysql.connector.Error as err:
         print(err.msg)
     else:
-        print("Inserted New Data")
+        print("Inserted New NASDAQ Data")
     try:
         cursor.execute(getNYSEInsertDDLFromFile())
     except mysql.connector.Error as err:
         print(err.msg)
     else:
-        print("Inserted New Data")
+        print("Inserted New NYSE Data")
+    for name, ddl in SCRIPTS.items():
+        try:
+            print("Running SQL Script {}: ".format(name), end='')
+            cursor.execute(ddl)
+        except mysql.connector.Error as err:
+                print(err.msg)
+        else:
+            print("OK")
     cnx.commit()
     cursor.close()
     #close the connector
