@@ -63,5 +63,30 @@ public class DBUtil {
             pool.freeConnection(connection);
         }
     }
-    
+    public static void addUser(User newUser){
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement ps = null;
+
+        String query = "INSERT INTO Users(email,name,password) "
+                + "VALUES(?,?,?)";
+        try {
+            ps = connection.prepareStatement(query);
+            ps.setString(1, newUser.getEmail());
+            ps.setString(2, newUser.getName());
+            ps.setBigDecimal(3, newUser.getAccountBalance());
+            ps.setString(4, newUser.getPassword());
+            ps.executeUpdate();
+            } catch (SQLException e) {
+            System.err.println(e);
+        } finally {        
+            try {
+                if(ps != null)
+                    ps.close();
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
+    }
 }

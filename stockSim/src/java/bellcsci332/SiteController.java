@@ -5,12 +5,14 @@
  */
 package bellcsci332;
 
+import bellcsci332.business.User;
+import bellcsci332.data.DBUtil;
 import java.io.IOException;
-import java.io.PrintWriter;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.math.BigDecimal;
 
 /**
  *
@@ -31,13 +33,17 @@ public class SiteController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
-        String url = null;
+        String url = "null";
         if(action == null){
            url = "/index.html";
         }else if(action.equals("signup")){
             url = "/signup.jsp";
         }else if(action.equals("login")){
             url = "/r/welcomeuser.jsp";
+        }else if(action.equals("displayProfile")){
+            String userEmail = request.getUserPrincipal().getName();
+            request.setAttribute("user", DBUtil.getUser(userEmail));
+            url = "/r/profile.jsp";
         }else {
             url = "/index.html";
         }
@@ -64,8 +70,14 @@ public class SiteController extends HttpServlet {
         if(action == null){
             url = "/signup.jsp";
         }else if(action.equals("signup")){
-            
-            //todo get attributes out of request object and write these to the user DB
+            User newUser = new User();
+            newUser.setName((String)request.getAttribute("name"));
+            newUser.setEmail((String)request.getAttribute("email"));
+            newUser.setAccountBalance((BigDecimal)request.getAttribute("accountBalance"));
+            newUser.setPassword((String)request.getAttribute("password"));
+            DBUtil.addUser(newUser);
+            request.setAttribute("user", newUser);
+            url = "/r/profile.jsp";
         }
         getServletContext()
                 .getRequestDispatcher(url)

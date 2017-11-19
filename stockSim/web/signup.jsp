@@ -14,22 +14,25 @@
         <title>Sign Up</title>
     </head>
     <body>
-        <form action="<c:url value='/marketSim'/>" 
+        <form action="marketSim" 
               method="post" class="inline">
             <input type="hidden" name="action" value="signup">
-            
+             <label>Full Name</label>
+            <input type="text" name="name"
+                   value="" required>
+           <br>
             <label>Email</label>
             <input type="text" name="email"
-                   value="">
+                   value="" required>
            <br>
 
             <label>Password</label>
             <input type="password" name="password" 
-                   value="">
+                   value="" required>
             <br>
              <label>Password Confirm</label>
             <input type="password" name="passwordConfirm" 
-                   value="">
+                   value="" required>
             <br>
 
             <label>&nbsp;</label>

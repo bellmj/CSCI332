@@ -22,7 +22,7 @@ TABLES['Users'] = (
     "CREATE TABLE Users ("
     "  email varchar(255) NOT NULL,"
     "  name varchar(255) NOT NULL,"
-    "  accountBalance DECIMAL(14,2) NOT NULL,"
+    "  accountBalance DECIMAL(14,2) DEFAULT 0.0,"
     "  password varchar(255) NOT NULL,"
     "  PRIMARY KEY (email),"
     "  CONSTRAINT Valid_Email CHECK(email LIKE \"%_@%__.__%\"),"
