@@ -1,58 +1,23 @@
 *.vux
 *.working
-#
-# Project specific excludes
-#
+#ant specific
+dist/
+build/
 
-tomcat
+#netbeans specific
+core
+nbproject/*
+!nbproject/project.properties
+!nbproject/project.xml
 
-#
-# Default excludes
-#
-
-# Binaries
-*.7z
-*.dmg
-*.gz
-*.iso
-*.jar
-*.rar
-*.tar
-*.zip
-*.war
-*.ear
-*.sar
+#java specific
 *.class
 
-# Maven
-target/
-
-# IntelliJ project files
-*.iml
-*.iws
-*.ipr
-.idea/
-
-# eclipse project file
-.settings/
-.classpath
-.project
-
-# NetBeans specific
-nbproject/private/
-build/
-nbbuild/
-dist/
-nbdist/
-nbactions.xml
-nb-configuration.xml
-
-
-# OS
-.DS_Store
-
-# Misc
+#general swap/backup files
+*.so
+*.log
+*.out
+*~
 *.swp
-release.properties
-pom.xml.releaseBackup
-pom.xml.tag
+*.DS_Store
+*.lock
