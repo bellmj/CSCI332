@@ -21,3 +21,4 @@ nbproject/*
 *.swp
 *.DS_Store
 *.lock
+/stockSim/nbproject/private/
