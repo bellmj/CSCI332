@@ -39,8 +39,32 @@ TABLES['UserRoles'] = (
     " email varchar(255) NOT NULL,"
     " userRole varchar(255) NOT NULL,"
     " PRIMARY KEY (email),"
-    " FOREIGN KEY (email) REFERENCES Users(email),"
-    " FOREIGN KEY (userRole) REFERENCES Roles(role)"
+    " FOREIGN KEY (email) REFERENCES Users(email) ON DELETE CASCADE ON UPDATE CASCADE,"
+    " FOREIGN KEY (userRole) REFERENCES Roles(role) ON UPDATE CASCADE"
+    ") ENGINE=InnoDB;")
+TABLES['NysePricesByTheMinute'] = (
+    "CREATE TABLE NysePricesByTheMinute("
+    " symbol varchar(16) NOT NULL,"
+    " timestamp TIMESTAMP NOT NULL,"
+    " open DECIMAL(14,2) NOT NULL,"
+    " close DECIMAL(14,2) NOT NULL,"
+    " high DECIMAL(14,2) NOT NULL,"
+    " low DECIMAL(14,2) NOT NULL,"
+    " volume INT NOT NULL,"
+    " PRIMARY KEY (symbol,timestamp),"
+    " FOREIGN KEY (symbol) REFERENCES NyseCompanyInfo(symbol)"
+    ") ENGINE=InnoDB;")
+TABLES['NasdaqPricesByTheMinute'] = (
+    "CREATE TABLE NasdaqPricesByTheMinute("
+    " symbol varchar(8) NOT NULL,"
+    " timestamp TIMESTAMP NOT NULL,"
+    " open DECIMAL(14,2) NOT NULL,"
+    " close DECIMAL(14,2) NOT NULL,"
+    " high DECIMAL(14,2) NOT NULL,"
+    " low DECIMAL(14,2) NOT NULL,"
+    " volume INT NOT NULL,"
+    " PRIMARY KEY (symbol,timestamp),"
+    " FOREIGN KEY (symbol) REFERENCES NasdaqCompanyInfo(symbol)"
     ") ENGINE=InnoDB;")
 
 SCRIPTS= {}
