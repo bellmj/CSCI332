@@ -66,6 +66,26 @@ TABLES['NasdaqPricesByTheMinute'] = (
     " PRIMARY KEY (symbol,timestamp),"
     " FOREIGN KEY (symbol) REFERENCES NasdaqCompanyInfo(symbol)"
     ") ENGINE=InnoDB;")
+TABLES['NasdaqPortfolioHoldings'] = (
+    "CREATE TABLE NasdaqPortfolioHoldings("
+    " nasdaqSymbol varchar(8) NOT NULL,"
+    " ownerEmail varchar(255) NOT NULL,"
+    " timestampWhenBought TIMESTAMP NOT NULL,"
+    " quantityHeld INT NOT NULL,"
+    " FOREIGN KEY (nasdaqSymbol) REFERENCES NasdaqCompanyInfo(symbol),"
+    " FOREIGN KEY (ownerEmail) REFERENCES Users(email) ON DELETE CASCADE ON UPDATE CASCADE,"
+    " FOREIGN KEY (nasdaqSymbol,timestampWhenBought) REFERENCES NasdaqPricesByTheMinute (symbol,timestamp)"
+    ") ENGINE=InnoDB;")
+TABLES['NysePortfolioHoldings'] = (
+    "CREATE TABLE NysePortfolioHoldings("
+    " nyseSymbol varchar(16) NOT NULL,"
+    " ownerEmail varchar(255) NOT NULL,"
+    " timestampWhenBought TIMESTAMP NOT NULL,"
+    " quantityHeld INT NOT NULL,"
+    " FOREIGN KEY (nyseSymbol) REFERENCES NyseCompanyInfo(symbol),"
+    " FOREIGN KEY (ownerEmail) REFERENCES Users(email) ON DELETE CASCADE ON UPDATE CASCADE,"
+    " FOREIGN KEY (nyseSymbol,timestampWhenBought) REFERENCES NysePricesByTheMinute(symbol,timestamp)"
+    ") ENGINE=InnoDB;")
 
 SCRIPTS= {}
 SCRIPTS['CreateRoles'] = (
