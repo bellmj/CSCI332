@@ -19,24 +19,23 @@
             <input type="hidden" name="action" value="signup">
             <label>Full Name</label>
             <input type="text" name="name"
-                   value="" required>
+                   value="${user.name}" required>${nameErrorMessage}
             <br>
             <label>Email</label>
-            <input type="text" name="email"
-                   value="" required>
+            <input type="email" name="email"
+                   value="${user.email}" required><span style="color:#f00">${emailErrorMessage}</span>
             <br>
-
             <label>Password</label>
             <input type="password" name="password" 
-                   value="" required>
+                   value="" required>${passwordErrorMessage}
             <br>
             <label>Password Confirm</label>
             <input type="password" name="passwordConfirm" 
                    value="" required>
             <br>
             <label>Initial Account Balance(max:$1,000,000)</label>
-            <input type="number" min="0.00" max="1000000.00" step="0.01" />
-
+            <input type="number" name="initialBalance" min="0.00" 
+                   max="1000000.00" step="0.01" value="${user.accountBalance}" />
             <label>&nbsp;</label>
             <input type="submit" value="Sign Up">
         </form>

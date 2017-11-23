@@ -18,12 +18,19 @@ import bellcsci332.business.User;
  * @author Matthew Bell
  */
 public class DBUtil {
+
+    public final static String NAME_REGEX = "([a-z]|[A-Z]|'|-)+ ([a-z]|[A-Z]|'|-)+";
+    public static final String EMAIL_REGEX = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@"
+            + "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";//Taken from http://www.mkyong.com/regular-expressions/how-to-validate-email-address-with-regular-expression/
+
     /**
      * a method to obtain a user from the database using their email
+     *
      * @param email the email of the user to obtain
-     * @return A User object that represents the user in the database; null if this user does not exist
+     * @return A User object that represents the user in the database; null if
+     * this user does not exist
      */
-    public static User getUser(String email){
+    public static User getUser(String email) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
         PreparedStatement ps = null;
@@ -44,26 +51,29 @@ public class DBUtil {
                 user.setAccountBalance(rs.getBigDecimal("accountBalance"));
             }
             return user;
-            } catch (SQLException e) {
+        } catch (SQLException e) {
             System.err.println(e);
             return null;
         } finally {
             try {
-                if(rs != null)
+                if (rs != null) {
                     rs.close();
+                }
             } catch (SQLException ex) {
                 Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
-            }         
+            }
             try {
-                if(ps != null)
+                if (ps != null) {
                     ps.close();
+                }
             } catch (SQLException ex) {
                 Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
             }
             pool.freeConnection(connection);
         }
     }
-    public static void addUser(User newUser){
+
+    public static void addUser(User newUser) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
         PreparedStatement ps = null;
@@ -77,12 +87,13 @@ public class DBUtil {
             ps.setBigDecimal(3, newUser.getAccountBalance());
             ps.setString(4, newUser.getPassword());
             ps.executeUpdate();
-            } catch (SQLException e) {
+        } catch (SQLException e) {
             System.err.println(e);
-        } finally {        
+        } finally {
             try {
-                if(ps != null)
+                if (ps != null) {
                     ps.close();
+                }
             } catch (SQLException ex) {
                 Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
             }
