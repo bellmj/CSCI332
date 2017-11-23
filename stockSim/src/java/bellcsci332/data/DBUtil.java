@@ -68,8 +68,8 @@ public class DBUtil {
         Connection connection = pool.getConnection();
         PreparedStatement ps = null;
 
-        String query = "INSERT INTO Users(email,name,password) "
-                + "VALUES(?,?,?)";
+        String query = "INSERT INTO Users(email,name,accountBalance,password) "
+                + "VALUES(?,?,?,?)";
         try {
             ps = connection.prepareStatement(query);
             ps.setString(1, newUser.getEmail());

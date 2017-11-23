@@ -14,26 +14,28 @@
         <title>Sign Up</title>
     </head>
     <body>
-        <form action="marketSim" 
+        <form action="<c:url value='/marketSim'/>" 
               method="post" class="inline">
             <input type="hidden" name="action" value="signup">
-             <label>Full Name</label>
+            <label>Full Name</label>
             <input type="text" name="name"
                    value="" required>
-           <br>
+            <br>
             <label>Email</label>
             <input type="text" name="email"
                    value="" required>
-           <br>
+            <br>
 
             <label>Password</label>
             <input type="password" name="password" 
                    value="" required>
             <br>
-             <label>Password Confirm</label>
+            <label>Password Confirm</label>
             <input type="password" name="passwordConfirm" 
                    value="" required>
             <br>
+            <label>Initial Account Balance(max:$1,000,000)</label>
+            <input type="number" min="0.00" max="1000000.00" step="0.01" />
 
             <label>&nbsp;</label>
             <input type="submit" value="Sign Up">

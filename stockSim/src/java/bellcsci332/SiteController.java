@@ -13,6 +13,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -70,22 +73,33 @@ public class SiteController extends HttpServlet {
         if(action == null){
             url = "/signup.jsp";
         }else if(action.equals("signup")){
-            User newUser = new User();
-            newUser.setName((String)request.getAttribute("name"));
-            newUser.setEmail((String)request.getAttribute("email"));
-            newUser.setAccountBalance((BigDecimal)request.getAttribute("accountBalance"));
-            newUser.setPassword((String)request.getAttribute("password"));
-            DBUtil.addUser(newUser);
-            request.setAttribute("user", newUser);
-            url = "/r/profile.jsp";
+            url = signUp(request,response);
         }
         getServletContext()
                 .getRequestDispatcher(url)
                 .forward(request, response);
     }
-    private String signUp(HttpServletRequest request,
-            HttpServletResponse response) {
-        return null;
+    private String signUp(HttpServletRequest request, HttpServletResponse response) {
+            User newUser = new User();
+            
+            //TODO validate user input; redirect back to signup if something is wrong
+            //TODO hashUser password
+            String userName = (String)request.getParameter("name");
+            String userNameRegex = "([a-z]|([A-Z]|'|-)* ([a-z]|([A-Z]|'|-)*";
+            String emailRegex = ".+@.+//..*";
+            if(userName.matches(userNameRegex)){
+                
+            }
+            newUser.setName(userName);
+            newUser.setEmail((String)request.getParameter("email"));
+            newUser.setAccountBalance(new BigDecimal("0.00"));
+            newUser.setPassword((String)request.getParameter("password"));
+            
+            DBUtil.addUser(newUser);
+            
+            request.setAttribute("user", newUser);
+            
+            return "/r/profile.jsp";
     }
 
     /**
