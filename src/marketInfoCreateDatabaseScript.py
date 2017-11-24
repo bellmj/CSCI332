@@ -94,10 +94,14 @@ SCRIPTS['CreateRoles'] = (
 SCRIPTS['InsertAdmins'] = (
     "INSERT into Users ("
     "email,name,accountBalance,password) "
-    "VALUES ('bellmj@g.cofc.edu','Matt Bell',0.00,'password');")
+    "VALUES ('bellmj@g.cofc.edu','Matt Bell',1000.00,'password');")
 SCRIPTS['InsertAdminsRoles'] = (
     "INSERT INTO UserRoles (email,userRole) "
     "VALUES ('bellmj@g.cofc.edu','admin');")
+SCRIPTS['portfolioHoldingsView'] = (#create portfilo Holdings View
+    "CREATE VIEW portfolioHoldingsView AS"
+    "(SELECT nyseSymbol AS symbol,ownerEmail,timestampWhenBought,quantityHeld FROM NysePortfolioHoldings) UNION"
+    "(SELECT * FROM NasdaqPortfolioHoldings);")
 
 
 def main():
