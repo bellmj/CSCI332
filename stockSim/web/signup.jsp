@@ -19,7 +19,7 @@
             <input type="hidden" name="action" value="signup">
             <label>Full Name</label>
             <input type="text" name="name"
-                   value="${user.name}" required>${nameErrorMessage}
+                   value="${user.name}" required><span style="color:#f00">${nameErrorMessage}</span>
             <br>
             <label>Email</label>
             <input type="email" name="email"
@@ -27,7 +27,7 @@
             <br>
             <label>Password</label>
             <input type="password" name="password" 
-                   value="" required>${passwordErrorMessage}
+                   value="" required><span style="color:#f00">${passwordErrorMessage}</span>
             <br>
             <label>Password Confirm</label>
             <input type="password" name="passwordConfirm" 

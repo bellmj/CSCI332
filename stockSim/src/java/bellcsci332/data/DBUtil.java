@@ -11,7 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import bellcsci332.business.User;
+import bellcsci332.business.*;
 
 /**
  *
@@ -100,4 +100,8 @@ public class DBUtil {
             pool.freeConnection(connection);
         }
     }
+    public static UserRole getUsersRole(){
+        //TODO implement this method
+        return null;
+    } 
 }

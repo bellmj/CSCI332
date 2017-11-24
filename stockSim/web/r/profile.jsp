@@ -13,7 +13,7 @@
         <title></title>
     </head>
     <body>
-        <a href="<c:url value=''/>">Buy Stock</a><a>View My Stocks</a>
+        <a href="<c:url value=''/>">Buy Stock</a><a href="<c:url value=''/>">View My Stocks</a>
         <p>Welcome ${user.name}</p>
         <br>
         <p>Your current account balance is $${user.accountBalance}</p>
