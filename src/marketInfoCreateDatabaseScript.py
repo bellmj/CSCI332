@@ -102,7 +102,12 @@ SCRIPTS['portfolioHoldingsView'] = (#create portfilo Holdings View
     "CREATE VIEW portfolioHoldingsView AS"
     "(SELECT nyseSymbol AS symbol,ownerEmail,timestampWhenBought,quantityHeld FROM NysePortfolioHoldings) UNION"
     "(SELECT * FROM NasdaqPortfolioHoldings);")
-
+SCRIPTS['AddUserRoleTrigger'] = (
+    "CREATE TRIGGER AddUserRoleTrigger AFTER INSERT ON Users"
+    " FOR EACH ROW"
+    " INSERT INTO UserRoles(email,userRole)"
+    " VALUES (NEW.email,'user');"
+)
 
 def main():
     cnx = mysql.connector.connect(user='root', password='password', host='127.0.0.1')
