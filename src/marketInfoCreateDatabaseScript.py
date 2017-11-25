@@ -1,5 +1,6 @@
 import mysql.connector
 from mysql.connector import errorcode
+from time import sleep
 DB_NAME = 'stockSim'
 TABLES = {}
 TABLES['NasdaqCompanyInfo'] = (
@@ -25,8 +26,8 @@ TABLES['Users'] = (
     "  accountBalance DECIMAL(14,2) DEFAULT 0.0,"
     "  password varchar(255) NOT NULL,"
     "  PRIMARY KEY (email),"
-    "  CONSTRAINT Valid_Email CHECK(email LIKE \"%_@%__.__%\"),"
-    "  CONSTRAINT Acct_Bal_Not_Neg CHECK(accountBalance >= 0)"
+    "  CONSTRAINT Valid_Email CHECK(email LIKE \"%_@%__.__%\"),"##TODO these constraints aren't enforced by InnoDB and will have to be immplemented
+    "  CONSTRAINT Acct_Bal_Not_Neg CHECK(accountBalance >= 0)"##     in a Trigger
     ") ENGINE=InnoDB")
 TABLES['Roles'] = (
     "CREATE TABLE Roles("
@@ -110,7 +111,15 @@ SCRIPTS['AddUserRoleTrigger'] = (
 )
 
 def main():
-    cnx = mysql.connector.connect(user='root', password='password', host='127.0.0.1')
+    #============================================================================================================
+    #===TODO===TODO=================TODO===TODO=================TODO===TODO==========TODO===TODO=================
+    #=TODO===TODO=================TODO===TODO=================TODO===TODO==========TODO===TODO===================
+    #TODO===TODO=================TODO===TODO=================TODO===TODO==========TODO===TODO====================
+    cnx = mysql.connector.connect(user='root', password='password', host='127.0.0.1')#This needs to be reconfigured for each new server
+    #TODO===TODO=================TODO===TODO=================TODO===TODO==========TODO===TODO====================
+    #=TODO===TODO=================TODO===TODO=================TODO===TODO==========TODO===TODO===================
+    #===TODO===TODO=================TODO===TODO=================TODO===TODO==========TODO===TODO=================
+    #============================================================================================================
     cursor = cnx.cursor()
     #connecting to stockSim database if It doesn't exist then create the database
     try:
@@ -126,6 +135,7 @@ def main():
     for name, ddl in TABLES.items():
         try:
             print("Creating table {}: ".format(name), end='')
+            sleep(0.3)
             cursor.execute(ddl)
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
@@ -134,21 +144,25 @@ def main():
                 print(err.msg)
         else:
             print("OK")
+            sleep(0.3)
     try:
         cursor.execute(getNasdaqInsertDDLFromFile())
     except mysql.connector.Error as err:
         print(err.msg)
     else:
         print("Inserted New NASDAQ Data")
+        sleep(0.3)
     try:
         cursor.execute(getNYSEInsertDDLFromFile())
     except mysql.connector.Error as err:
         print(err.msg)
     else:
         print("Inserted New NYSE Data")
+        sleep(0.3)
     for name, ddl in SCRIPTS.items():
         try:
             print("Running SQL Script {}: ".format(name), end='')
+            sleep(0.3)
             cursor.execute(ddl)
         except mysql.connector.Error as err:
                 print(err.msg)
@@ -185,7 +199,7 @@ def getNYSEInsertDDLFromFile():
             continue
         sector = "," + (("\'" + tupleList[6] + "\'") if tupleList[6] != "n/a" else "NULL")
         industry = "," + (("\'" + tupleList[7] + "\'") if tupleList[7] != "n/a" else "NULL")
-        returnDDL += "(\'" + tupleList[0] + "\',\'" + tupleList[1].replace(';',',') + "\'" + sector + industry + "),"
+        returnDDL += "(\'" + tupleList[0] + "\',\'" + tupleList[1].replace("\"","") + "\'" + sector + industry + "),"
     returnDDL = returnDDL[0:len(returnDDL)-1] + ";"
     return returnDDL
 

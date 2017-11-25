@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import bellcsci332.business.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -94,6 +96,118 @@ public class DBUtil {
                 if (ps != null) {
                     ps.close();
                 }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
+    }
+    public static List<CompanyInfo> getNyseCompaniesInfo(){
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String query = "SELECT * FROM NyseCompanyInfo;";
+        try {
+            ps = connection.prepareStatement(query);
+            rs = ps.executeQuery();
+            List<CompanyInfo> companyInfoList = new ArrayList<>();
+            while (rs.next()) {
+                CompanyInfo nyseCompany = new CompanyInfo();
+                nyseCompany.setSymbol(rs.getString("symbol"));
+                nyseCompany.setName(rs.getString("name"));
+                nyseCompany.setSector(rs.getString("sector"));
+                nyseCompany.setIndustry(rs.getString("industry"));
+                companyInfoList.add(nyseCompany);
+                
+            }
+            return companyInfoList;
+            } catch (SQLException e) {
+            return null;
+        } finally {
+            try {
+                if(rs != null)
+                    rs.close();
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }         
+            try {
+                if(ps != null)
+                    ps.close();
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
+    }
+    public static List<CompanyInfo> getNasdaqCompaniesInfo(){
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String query = "SELECT * FROM NasdaqCompanyInfo;";
+        try {
+            ps = connection.prepareStatement(query);
+            rs = ps.executeQuery();
+            List<CompanyInfo> companyInfoList = new ArrayList<>();
+            while (rs.next()) {
+                CompanyInfo nasdaqCompany = new CompanyInfo();
+                nasdaqCompany.setSymbol(rs.getString("symbol"));
+                nasdaqCompany.setName(rs.getString("name"));
+                nasdaqCompany.setSector(rs.getString("sector"));
+                nasdaqCompany.setIndustry(rs.getString("industry"));
+                companyInfoList.add(nasdaqCompany);
+                
+            }
+            return companyInfoList;
+            } catch (SQLException e) {
+            return null;
+        } finally {
+            try {
+                if(rs != null)
+                    rs.close();
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }         
+            try {
+                if(ps != null)
+                    ps.close();
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
+    }
+    public static List<User> getUsers(){
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String query = "SELECT * FROM Users;";
+        try {
+            ps = connection.prepareStatement(query);
+            rs = ps.executeQuery();
+            List<User> userList = new ArrayList<>();
+            while (rs.next()) {
+                User user = new User();
+                user.setEmail(rs.getString("email"));
+                user.setName(rs.getString("name"));
+                user.setAccountBalance(rs.getBigDecimal("accountBalance"));
+                userList.add(user);
+            }
+            return userList;
+            } catch (SQLException e) {
+            return null;
+        } finally {
+            try {
+                if(rs != null)
+                    rs.close();
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }         
+            try {
+                if(ps != null)
+                    ps.close();
             } catch (SQLException ex) {
                 Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
             }

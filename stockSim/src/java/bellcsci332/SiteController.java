@@ -5,6 +5,7 @@
  */
 package bellcsci332;
 
+import bellcsci332.business.CompanyInfo;
 import bellcsci332.business.User;
 import bellcsci332.data.DBUtil;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -45,8 +47,29 @@ public class SiteController extends HttpServlet {
             url = "/r/welcomeuser.jsp";
         } else if (action.equals("displayProfile")) {
             String userEmail = request.getUserPrincipal().getName();
-            request.setAttribute("user", DBUtil.getUser(userEmail));
-            url = "/r/profile.jsp";
+            boolean userIsAdmin = request.isUserInRole("admin");
+            if(!userIsAdmin){
+                request.setAttribute("user", DBUtil.getUser(userEmail));
+                url = "/r/profile.jsp";
+            }else{
+                url = "/r/admin/adminHome.jsp";
+            }
+        } else if(action.equals("adminViewNyseInfoTable")){
+            //todo get NyseInfoTable and pass it to displayNyseCompanyInfo.jsp
+            List<CompanyInfo> nyseCompanyInfo = DBUtil.getNyseCompaniesInfo();
+            request.setAttribute("companies", nyseCompanyInfo);
+            url = "/r/admin/displayNyseCompanyInfo.jsp";
+          
+        } else if(action.equals("adminViewNasdaqInfoTable")){
+            List<CompanyInfo> nyseCompanyInfo = DBUtil.getNasdaqCompaniesInfo();
+            request.setAttribute("companies", nyseCompanyInfo);
+            url = "/r/admin/displayNasdaqCompanyInfo.jsp";
+          
+        } else if(action.equals("adminViewUserTable")){
+            List<User> users = DBUtil.getUsers();
+            request.setAttribute("users", users);
+            url = "/r/admin/displayUsers.jsp";
+          
         } else {
             url = "/index.html";
         }
