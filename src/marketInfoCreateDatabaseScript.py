@@ -103,6 +103,10 @@ SCRIPTS['portfolioHoldingsView'] = (#create portfilo Holdings View
     "CREATE VIEW portfolioHoldingsView AS"
     "(SELECT nyseSymbol AS symbol,ownerEmail,timestampWhenBought,quantityHeld FROM NysePortfolioHoldings) UNION"
     "(SELECT * FROM NasdaqPortfolioHoldings);")
+SCRIPTS['companyInfoView'] = (#create portfilo Holdings View
+    "CREATE VIEW companyInfoView AS"
+    "(SELECT symbol,name,sector,industry FROM NyseCompanyInfo) UNION"
+    "(SELECT * FROM NasdaqCompanyInfo);")
 SCRIPTS['AddUserRoleTrigger'] = (
     "CREATE TRIGGER AddUserRoleTrigger AFTER INSERT ON Users"
     " FOR EACH ROW"
@@ -135,7 +139,7 @@ def main():
     for name, ddl in TABLES.items():
         try:
             print("Creating table {}: ".format(name), end='')
-            sleep(0.3)
+            sleep(0.2)
             cursor.execute(ddl)
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
@@ -144,25 +148,25 @@ def main():
                 print(err.msg)
         else:
             print("OK")
-            sleep(0.3)
+            sleep(0.2)
     try:
         cursor.execute(getNasdaqInsertDDLFromFile())
     except mysql.connector.Error as err:
         print(err.msg)
     else:
         print("Inserted New NASDAQ Data")
-        sleep(0.3)
+        sleep(0.2)
     try:
         cursor.execute(getNYSEInsertDDLFromFile())
     except mysql.connector.Error as err:
         print(err.msg)
     else:
         print("Inserted New NYSE Data")
-        sleep(0.3)
+        sleep(0.2)
     for name, ddl in SCRIPTS.items():
         try:
             print("Running SQL Script {}: ".format(name), end='')
-            sleep(0.3)
+            sleep(0.2)
             cursor.execute(ddl)
         except mysql.connector.Error as err:
                 print(err.msg)

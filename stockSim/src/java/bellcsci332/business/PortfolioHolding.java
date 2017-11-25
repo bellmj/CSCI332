@@ -6,13 +6,14 @@
 package bellcsci332.business;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 
 /**
  *
  * @author Matthew Bell
  */
 public class PortfolioHolding {
-    private Date timeStamp;
+    private Timestamp timeStamp;
     private int quantityHeld;
     private String ownerEmail;
     private String symbol;
@@ -20,18 +21,18 @@ public class PortfolioHolding {
     public PortfolioHolding() {
     }
 
-    public PortfolioHolding(Date timeStamp, int quantityHeld, String ownerEmail, String symbol) {
+    public PortfolioHolding(Timestamp timeStamp, int quantityHeld, String ownerEmail, String symbol) {
         this.timeStamp = timeStamp;
         this.quantityHeld = quantityHeld;
         this.ownerEmail = ownerEmail;
         this.symbol = symbol;
     }
 
-    public Date getTimeStamp() {
+    public Timestamp getTimeStamp() {
         return timeStamp;
     }
 
-    public void setTimeStamp(Date timeStamp) {
+    public void setTimeStamp(Timestamp timeStamp) {
         this.timeStamp = timeStamp;
     }
 

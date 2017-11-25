@@ -13,9 +13,11 @@
         <title>Welcome Admin</title>
     </head>
     <body>
-        <h1>Admin HomePage</h1>
+        <h1>Admin Home Page</h1>
         <a href="<c:url value='/marketSim?action=adminViewNyseInfoTable'/>">View Nyse Company List</a>
+        <br>
         <a href="<c:url value='/marketSim?action=adminViewNasdaqInfoTable'/>">View Nasdaq Company List</a>
+        <br>
         <a href="<c:url value='/marketSim?action=adminViewUserTable'/>">View User</a>
         
         

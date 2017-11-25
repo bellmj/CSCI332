@@ -6,6 +6,7 @@
 package bellcsci332;
 
 import bellcsci332.business.CompanyInfo;
+import bellcsci332.business.StockPrice;
 import bellcsci332.business.User;
 import bellcsci332.data.DBUtil;
 import java.io.IOException;
@@ -70,7 +71,11 @@ public class SiteController extends HttpServlet {
             request.setAttribute("users", users);
             url = "/r/admin/displayUsers.jsp";
           
-        } else {
+        } else if(action.equals("stockQuoteHome")){
+            request.setAttribute("symbols",DBUtil.getAllTickerSymbols());//pass a list of all symbols to the stockQuote jsp
+            url = "/r/getStockQuote.jsp";
+        }
+        else {
             url = "/index.html";
         }
 
@@ -92,17 +97,49 @@ public class SiteController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
-        String url = "";
+        String url = "/index.html";
         if (action == null) {
             url = "/signup.jsp";
         } else if (action.equals("signup")) {
             url = signUp(request, response);
+        } else if (action.equals("getQuote")){
+            url = getQuote(request,response);
         }
         getServletContext()
                 .getRequestDispatcher(url)
                 .forward(request, response);
     }
-
+    private String getQuote(HttpServletRequest request, HttpServletResponse response) {
+        String selectedSymbol = request.getParameter("symbol");
+        String url = "/index.html";
+        boolean symbolInNasdaq = DBUtil.symbolInNasdaq(selectedSymbol);
+        boolean symbolInNyse = DBUtil.symbolInNyse(selectedSymbol);
+        if(!(symbolInNasdaq || symbolInNyse)){
+            //TODO redirect back to getStockQuote.jsp with an error message
+            url = "/getStockQuote.jsp";
+        } else{
+            if(symbolInNasdaq){
+                //TODO check Nasdaq or NYSEPricesByTheMinute to see if symbol is in table and up to date
+                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "SymbolInNasdaq");
+                List<StockPrice> stockList = DBUtil.getStockInfoFromAPI(selectedSymbol);
+                request.setAttribute("stockList", stockList);
+                url = "/r/apiData.jsp";
+                DBUtil.marketsAreOpen();
+            }else if(symbolInNyse){
+                //TODO check Nasdaq or NYSEPricesByTheMinute to see if symbol is in table and up to date
+                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "SymbolInNyse");
+                List<StockPrice> stockList = DBUtil.getStockInfoFromAPI(selectedSymbol);
+                request.setAttribute("stockList", stockList);
+                url = "/r/apiData.jsp";
+                DBUtil.marketsAreOpen();
+            }
+            //TODO check Nasdaq or NYSEPricesByTheMinute to see if symbol is in table and up to date
+            //TODO if symbol is not in database or needs to be updated then make api call and write the info to DB
+            //TODO pull updated symbol info and and add it to the request object
+        }
+        
+        return url;
+    }
     private String signUp(HttpServletRequest request, HttpServletResponse response) {
         User newUser = new User();
         String url = "/index.html";
