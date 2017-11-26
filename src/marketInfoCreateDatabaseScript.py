@@ -72,20 +72,22 @@ TABLES['NasdaqPortfolioHoldings'] = (
     " nasdaqSymbol varchar(8) NOT NULL,"
     " ownerEmail varchar(255) NOT NULL,"
     " timestampWhenBought TIMESTAMP NOT NULL,"
+    " timestampOfStock TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
     " quantityHeld INT NOT NULL,"
     " FOREIGN KEY (nasdaqSymbol) REFERENCES NasdaqCompanyInfo(symbol),"
     " FOREIGN KEY (ownerEmail) REFERENCES Users(email) ON DELETE CASCADE ON UPDATE CASCADE,"
-    " FOREIGN KEY (nasdaqSymbol,timestampWhenBought) REFERENCES NasdaqPricesByTheMinute (symbol,timestamp)"
+    " FOREIGN KEY (nasdaqSymbol,timestampOfStock) REFERENCES NasdaqPricesByTheMinute (symbol,timestamp)"
     ") ENGINE=InnoDB;")
 TABLES['NysePortfolioHoldings'] = (
     "CREATE TABLE NysePortfolioHoldings("
     " nyseSymbol varchar(16) NOT NULL,"
     " ownerEmail varchar(255) NOT NULL,"
     " timestampWhenBought TIMESTAMP NOT NULL,"
+    " timestampOfStock TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
     " quantityHeld INT NOT NULL,"
     " FOREIGN KEY (nyseSymbol) REFERENCES NyseCompanyInfo(symbol),"
     " FOREIGN KEY (ownerEmail) REFERENCES Users(email) ON DELETE CASCADE ON UPDATE CASCADE,"
-    " FOREIGN KEY (nyseSymbol,timestampWhenBought) REFERENCES NysePricesByTheMinute(symbol,timestamp)"
+    " FOREIGN KEY (nyseSymbol,timestampOfStock) REFERENCES NysePricesByTheMinute(symbol,timestamp)"
     ") ENGINE=InnoDB;")
 
 SCRIPTS= {}
@@ -101,7 +103,7 @@ SCRIPTS['InsertAdminsRoles'] = (
     "VALUES ('bellmj@g.cofc.edu','admin');")
 SCRIPTS['portfolioHoldingsView'] = (#create portfilo Holdings View
     "CREATE VIEW portfolioHoldingsView AS"
-    "(SELECT nyseSymbol AS symbol,ownerEmail,timestampWhenBought,quantityHeld FROM NysePortfolioHoldings) UNION"
+    "(SELECT nyseSymbol AS symbol,ownerEmail,timestampWhenBought,timestampOfStock,quantityHeld FROM NysePortfolioHoldings) UNION"
     "(SELECT * FROM NasdaqPortfolioHoldings);")
 SCRIPTS['companyInfoView'] = (#create portfilo Holdings View
     "CREATE VIEW companyInfoView AS"

@@ -73,6 +73,7 @@ public class SiteController extends HttpServlet {
 
         } else if (action.equals("stockQuoteHome")) {
             request.setAttribute("symbols", DBUtil.getAllTickerSymbols());//pass a list of all symbols to the stockQuote jsp
+            request.setAttribute("userEmail", "userEmial");
             url = "/r/getStockQuote.jsp";
         } else {
             url = "/index.html";
@@ -118,6 +119,7 @@ public class SiteController extends HttpServlet {
         StockPrice latestStockPrice = DBUtil.getLatestStockPrice(selectedSymbol);
         BigDecimal pricePerShare = latestStockPrice.getClose();
         //TODO actually buy this many shares for the user and deduct from their account
+        DBUtil.buyStock(userEmail, numberOfShares, selectedSymbol);
         Logger.getLogger(SiteController.class.getName()).log(Level.INFO,pricePerShare.toString());
         return url;
     }

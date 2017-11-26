@@ -22,6 +22,7 @@ import java.net.URL;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.GregorianCalendar;
 import javax.net.ssl.HttpsURLConnection;
@@ -299,6 +300,46 @@ public class DBUtil {
         }
         return false;
     }
+    public static List<PortfolioHolding> getUsersHoldings(String email){
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String query = "SELECT * FROM portfolioHoldingsView WHERE "
+                + "ownerEmail = ?;";
+        try {
+            ps = connection.prepareStatement(query);
+            rs = ps.executeQuery();
+            List<PortfolioHolding> userHoldingsList = new ArrayList<>();
+            while (rs.next()) {
+                PortfolioHolding userHolding = new PortfolioHolding();
+                userHolding.setOwnerEmail(rs.getString("ownerEmail"));
+                userHolding.setQuantityHeld(rs.getInt("quantityHeld"));
+                userHolding.setSymbol(rs.getString("symbol"));
+                userHolding.setTimeStamp(rs.getTimestamp("timestampOfStock"));
+                userHoldingsList.add(userHolding);
+            }
+            return userHoldingsList;
+        } catch (SQLException e) {
+            return null;
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
+    }
 
     public static List<StockPrice> getPriceList(String symbol) {
         ConnectionPool pool = ConnectionPool.getInstance();
@@ -347,6 +388,89 @@ public class DBUtil {
         }
     }
 
+    /**
+     * Method to add a batch of StockPrices to the Database. These prices must
+     * be from the same api call and all have the same symbol
+     *
+     * @param stockPrices List of Stock Prices of the same symbol to add
+     */
+    public static void addStockPrices(List<StockPrice> stockPrices) {
+        if (stockPrices.size() == 0) {
+            return;
+        }
+        if (symbolInNyse(stockPrices.get(0).getSymbol())) {
+            ConnectionPool pool = ConnectionPool.getInstance();
+            Connection connection = pool.getConnection();
+            PreparedStatement ps = null;
+
+            String query = "INSERT INTO NysePricesByTheMinute(symbol,timestamp,high,low,open,close,volume) "
+                    + "VALUES(?,?,?,?,?,?,?)";
+
+            try {
+                ps = connection.prepareStatement(query);
+                for (StockPrice stockPrice : stockPrices) {
+                    ps.setString(1, stockPrice.getSymbol());
+                    ps.setTimestamp(2, stockPrice.getTimeStamp());
+                    ps.setBigDecimal(3, stockPrice.getHigh());
+                    ps.setBigDecimal(4, stockPrice.getLow());
+                    ps.setBigDecimal(5, stockPrice.getOpen());
+                    ps.setBigDecimal(6, stockPrice.getClose());
+                    ps.setInt(7, stockPrice.getVolume());
+                    ps.addBatch();
+                }
+
+                ps.executeBatch();
+
+            } catch (SQLException e) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
+            } finally {
+                try {
+                    if (ps != null) {
+                        ps.close();
+                    }
+                } catch (SQLException ex) {
+                    Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                pool.freeConnection(connection);
+            }
+        } else if (symbolInNasdaq(stockPrices.get(0).getSymbol())) {
+            //todo add price to NasdaqPricesByTheMinute
+            ConnectionPool pool = ConnectionPool.getInstance();
+            Connection connection = pool.getConnection();
+            PreparedStatement ps = null;
+
+            String query = "INSERT INTO NasdaqPricesByTheMinute(symbol,timestamp,high,low,open,close,volume) "
+                    + "VALUES(?,?,?,?,?,?,?)";
+            try {
+                ps = connection.prepareStatement(query);
+                for (StockPrice stockPrice : stockPrices) {
+                    ps.setString(1, stockPrice.getSymbol());
+                    ps.setTimestamp(2, stockPrice.getTimeStamp());
+                    ps.setBigDecimal(3, stockPrice.getHigh());
+                    ps.setBigDecimal(4, stockPrice.getLow());
+                    ps.setBigDecimal(5, stockPrice.getOpen());
+                    ps.setBigDecimal(6, stockPrice.getClose());
+                    ps.setInt(7, stockPrice.getVolume());
+                    ps.addBatch();
+                }
+
+                ps.executeBatch();
+            } catch (SQLException e) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
+            } finally {
+                try {
+                    if (ps != null) {
+                        ps.close();
+                    }
+                } catch (SQLException ex) {
+                    Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                pool.freeConnection(connection);
+            }
+        }
+
+    }
+
     public static void addStockPrice(StockPrice stockPrice) {
         if (symbolInNyse(stockPrice.getSymbol())) {
             ConnectionPool pool = ConnectionPool.getInstance();
@@ -364,8 +488,7 @@ public class DBUtil {
                 ps.setBigDecimal(5, stockPrice.getOpen());
                 ps.setBigDecimal(6, stockPrice.getClose());
                 ps.setInt(7, stockPrice.getVolume());
-                
-                
+
                 ps.executeUpdate();
             } catch (SQLException e) {
                 Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
@@ -396,7 +519,7 @@ public class DBUtil {
                 ps.setBigDecimal(5, stockPrice.getOpen());
                 ps.setBigDecimal(6, stockPrice.getClose());
                 ps.setInt(7, stockPrice.getVolume());
-                
+
                 ps.executeUpdate();
             } catch (SQLException e) {
                 Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
@@ -459,7 +582,6 @@ public class DBUtil {
 
         //Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, strBuf.toString());
         JSONParser parser = new JSONParser();
-
         Object obj;
         List<StockPrice> returnList = new ArrayList<>();
         try {
@@ -494,27 +616,42 @@ public class DBUtil {
     }
 
     public static StockPrice getLatestStockPrice(String symbol) {
+        //TODO check the DB to see if an api call is necessary
+        long startTime = System.nanoTime();
         List<StockPrice> apiPriceList = getStockInfoFromAPI(symbol);
+        Collections.sort(apiPriceList);
+        Collections.reverse(apiPriceList);
+        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call api:" + ((System.nanoTime() - startTime) / 1000000000.0));
+        startTime = System.nanoTime();
         List<StockPrice> dataBaseList = getPriceList(symbol);
+        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call DB:" + ((System.nanoTime() - startTime) / 1000000000.0));
         StockPrice returnPrice = apiPriceList.get(0);
         List<Timestamp> databaseTimeStampList = new ArrayList<>();
-        for(StockPrice databasePrice:dataBaseList){
+        for (StockPrice databasePrice : dataBaseList) {
             databaseTimeStampList.add(databasePrice.getTimeStamp());
         }
+        List<StockPrice> stocksToAddToDB = new ArrayList<>();
+        startTime = System.nanoTime();
         for (StockPrice apiPrice : apiPriceList) {
             if (dataBaseList == null || !databaseTimeStampList.contains(apiPrice.getTimeStamp())) {
-                addStockPrice(apiPrice);
+                stocksToAddToDB.add(apiPrice);
+            } else {
+                break;
             }
-            
+
         }
+        DBUtil.addStockPrices(stocksToAddToDB);
+        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to add stocks:" + ((System.nanoTime() - startTime) / 1000000000.0));
+
         return returnPrice;
     }
-    public static boolean buyStock(String userEmail,int quantityToBuy,String symbol){
+
+    public static boolean buyStock(String userEmail, int quantityToBuy, String symbol) {
         StockPrice latestStockPrice = DBUtil.getLatestStockPrice(symbol);
         User buyer = DBUtil.getUser(userEmail);
         BigDecimal newAccountBalance = buyer.getAccountBalance().subtract(
                 latestStockPrice.getClose().multiply(new BigDecimal(quantityToBuy)));
-        if(newAccountBalance.compareTo(BigDecimal.ZERO) < 0){
+        if (newAccountBalance.compareTo(BigDecimal.ZERO) < 0) {
             return false;
         }
         buyer.setAccountBalance(newAccountBalance);
@@ -527,11 +664,74 @@ public class DBUtil {
         addUserHolding(newHolding);
         return true;
     }
-    private static void updateUser(User user){
-        //TODO Update User in DB
+
+    private static void updateUser(User user) {
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement ps = null;
+
+        String query = "UPDATE Users SET name = ?,accountBalance = ?,password = ?"
+                + "WHERE email = ?;";
+        try {
+            ps = connection.prepareStatement(query);
+            
+            ps.setString(1, user.getName());
+            ps.setBigDecimal(2, user.getAccountBalance());
+            ps.setString(3, user.getPassword());
+            ps.setString(4, user.getEmail());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println(e);
+        } finally {
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
     }
-    private static void addUserHolding(PortfolioHolding holding){
-        //TODO add user holding to correct Table
+
+    private static void addUserHolding(PortfolioHolding holding) {
+        //TODO allow users to buy more of stock that they already own some of with the same time stamp
+        String table = "";
+        String symbolName = "";
+        if (DBUtil.symbolInNasdaq(holding.getSymbol())) {
+            table = "NasdaqPortfolioHoldings";
+            symbolName = "nasdaqSymbol";
+        } else if (DBUtil.symbolInNyse(holding.getSymbol())) {
+            table = "NysePortfolioHoldings";
+            symbolName = "nyseSymbol";
+        } else {
+            return;
+        }
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement ps = null;
+
+        String query = "INSERT INTO " + table + " (" + symbolName + ",ownerEmail,timestampOfStock,quantityHeld) "
+                + "VALUES(?,?,?,?)";
+        try {
+            ps = connection.prepareStatement(query);
+            ps.setString(1, holding.getSymbol());
+            ps.setString(2, holding.getOwnerEmail());
+            ps.setTimestamp(3, holding.getTimeStamp());
+            ps.setInt(4, holding.getQuantityHeld());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println(e);
+        } finally {
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
     }
 
     public static boolean marketsAreOpen() {

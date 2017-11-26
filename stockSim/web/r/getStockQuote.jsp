@@ -16,6 +16,7 @@
         <form action="<c:url value='/marketSim'/>" 
               method="post" class="inline">
             <input type="hidden" name="action" value="getQuote">
+            <input type="hidden" name="userEmail" value="${user.email}">
             <label>Ticker Symbol</label>
             <input list="symbols" name="symbol">
             <datalist id="symbols">

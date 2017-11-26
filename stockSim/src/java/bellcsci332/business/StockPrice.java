@@ -14,7 +14,7 @@ import java.sql.Timestamp;
  *
  * @author Matthew Bell
  */
-public class StockPrice implements Serializable{
+public class StockPrice implements Serializable,Comparable{
     private String symbol;
     private Timestamp timeStamp;
     private BigDecimal open;
@@ -90,6 +90,18 @@ public class StockPrice implements Serializable{
 
     public void setLow(BigDecimal low) {
         this.low = low;
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        long result = this.timeStamp.getTime() - ((StockPrice)o).getTimeStamp().getTime();
+        if(result < 0){
+            return -1;
+        }else if(result > 0){
+            return 1;
+        }else {
+            return 0;
+        }
     }
     
     
