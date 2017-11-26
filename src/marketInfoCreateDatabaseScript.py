@@ -46,7 +46,7 @@ TABLES['UserRoles'] = (
 TABLES['NysePricesByTheMinute'] = (
     "CREATE TABLE NysePricesByTheMinute("
     " symbol varchar(16) NOT NULL,"
-    " timestamp TIME NOT NULL,"
+    " timestamp TIMESTAMP NOT NULL,"
     " open DECIMAL(14,2) NOT NULL,"
     " close DECIMAL(14,2) NOT NULL,"
     " high DECIMAL(14,2) NOT NULL,"
@@ -58,7 +58,7 @@ TABLES['NysePricesByTheMinute'] = (
 TABLES['NasdaqPricesByTheMinute'] = (
     "CREATE TABLE NasdaqPricesByTheMinute("
     " symbol varchar(8) NOT NULL,"
-    " timestamp TIME NOT NULL,"
+    " timestamp TIMESTAMP NOT NULL,"
     " open DECIMAL(14,2) NOT NULL,"
     " close DECIMAL(14,2) NOT NULL,"
     " high DECIMAL(14,2) NOT NULL,"
@@ -71,7 +71,7 @@ TABLES['NasdaqPortfolioHoldings'] = (
     "CREATE TABLE NasdaqPortfolioHoldings("
     " nasdaqSymbol varchar(8) NOT NULL,"
     " ownerEmail varchar(255) NOT NULL,"
-    " timestampWhenBought TIME NOT NULL,"
+    " timestampWhenBought TIMESTAMP NOT NULL,"
     " quantityHeld INT NOT NULL,"
     " FOREIGN KEY (nasdaqSymbol) REFERENCES NasdaqCompanyInfo(symbol),"
     " FOREIGN KEY (ownerEmail) REFERENCES Users(email) ON DELETE CASCADE ON UPDATE CASCADE,"
@@ -81,7 +81,7 @@ TABLES['NysePortfolioHoldings'] = (
     "CREATE TABLE NysePortfolioHoldings("
     " nyseSymbol varchar(16) NOT NULL,"
     " ownerEmail varchar(255) NOT NULL,"
-    " timestampWhenBought TIME NOT NULL,"
+    " timestampWhenBought TIMESTAMP NOT NULL,"
     " quantityHeld INT NOT NULL,"
     " FOREIGN KEY (nyseSymbol) REFERENCES NyseCompanyInfo(symbol),"
     " FOREIGN KEY (ownerEmail) REFERENCES Users(email) ON DELETE CASCADE ON UPDATE CASCADE,"
@@ -111,8 +111,11 @@ SCRIPTS['AddUserRoleTrigger'] = (
     "CREATE TRIGGER AddUserRoleTrigger AFTER INSERT ON Users"
     " FOR EACH ROW"
     " INSERT INTO UserRoles(email,userRole)"
-    " VALUES (NEW.email,'user');"
-)
+    " VALUES (NEW.email,'user');")
+SCRIPTS['stockPricesByTheMinute'] = (
+    "CREATE VIEW stockPricesByTheMinute AS"
+    " (SELECT * FROM NysePricesByTheMinute) UNION"
+    " (SELECT * FROM NasdaqPricesByTheMinute);")
 
 def main():
     #============================================================================================================

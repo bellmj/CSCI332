@@ -300,6 +300,120 @@ public class DBUtil {
         return false;
     }
 
+    public static List<StockPrice> getPriceList(String symbol) {
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String query = "SELECT * FROM stockPricesByTheMinute "
+                + "WHERE symbol = ?"
+                + "ORDER BY timestamp DESC;";
+        try {
+            ps = connection.prepareStatement(query);
+            ps.setString(1, symbol);
+            rs = ps.executeQuery();
+            List<StockPrice> priceList = new ArrayList<>();
+            while (rs.next()) {
+                StockPrice stockPrice = new StockPrice();
+                stockPrice.setSymbol(symbol);
+                stockPrice.setTimeStamp(rs.getTimestamp("timestamp"));
+                stockPrice.setHigh(rs.getBigDecimal("high"));
+                stockPrice.setLow(rs.getBigDecimal("low"));
+                stockPrice.setOpen(rs.getBigDecimal("open"));
+                stockPrice.setClose(rs.getBigDecimal("close"));
+                stockPrice.setVolume(rs.getInt("volume"));
+                priceList.add(stockPrice);
+            }
+            return priceList;
+        } catch (SQLException e) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, "Mysql Exception", e);
+            return null;
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
+    }
+
+    public static void addStockPrice(StockPrice stockPrice) {
+        if (symbolInNyse(stockPrice.getSymbol())) {
+            ConnectionPool pool = ConnectionPool.getInstance();
+            Connection connection = pool.getConnection();
+            PreparedStatement ps = null;
+
+            String query = "INSERT INTO NysePricesByTheMinute(symbol,timestamp,high,low,open,close,volume) "
+                    + "VALUES(?,?,?,?,?,?,?)";
+            try {
+                ps = connection.prepareStatement(query);
+                ps.setString(1, stockPrice.getSymbol());
+                ps.setTimestamp(2, stockPrice.getTimeStamp());
+                ps.setBigDecimal(3, stockPrice.getHigh());
+                ps.setBigDecimal(4, stockPrice.getLow());
+                ps.setBigDecimal(5, stockPrice.getOpen());
+                ps.setBigDecimal(6, stockPrice.getClose());
+                ps.setInt(7, stockPrice.getVolume());
+                
+                
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
+            } finally {
+                try {
+                    if (ps != null) {
+                        ps.close();
+                    }
+                } catch (SQLException ex) {
+                    Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                pool.freeConnection(connection);
+            }
+        } else if (symbolInNasdaq(stockPrice.getSymbol())) {
+            //todo add price to NasdaqPricesByTheMinute
+            ConnectionPool pool = ConnectionPool.getInstance();
+            Connection connection = pool.getConnection();
+            PreparedStatement ps = null;
+
+            String query = "INSERT INTO NasdaqPricesByTheMinute(symbol,timestamp,high,low,open,close,volume) "
+                    + "VALUES(?,?,?,?,?,?,?)";
+            try {
+                ps = connection.prepareStatement(query);
+                ps.setString(1, stockPrice.getSymbol());
+                ps.setTimestamp(2, stockPrice.getTimeStamp());
+                ps.setBigDecimal(3, stockPrice.getHigh());
+                ps.setBigDecimal(4, stockPrice.getLow());
+                ps.setBigDecimal(5, stockPrice.getOpen());
+                ps.setBigDecimal(6, stockPrice.getClose());
+                ps.setInt(7, stockPrice.getVolume());
+                
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
+            } finally {
+                try {
+                    if (ps != null) {
+                        ps.close();
+                    }
+                } catch (SQLException ex) {
+                    Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                pool.freeConnection(connection);
+            }
+        }
+
+    }
+
     public static List<StockPrice> getStockInfoFromAPI(String symbol) {
 
         StringBuilder strBuf = new StringBuilder();
@@ -357,13 +471,14 @@ public class DBUtil {
                 String key = (String) k;
                 StockPrice stockPrice = new StockPrice();
                 stockPrice.setSymbol(symbol);
+                //Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, Timestamp.valueOf(key).toString());
                 stockPrice.setTimeStamp(Timestamp.valueOf(key));
                 JSONObject priceObject = (JSONObject) timeObject.get(key);
                 BigDecimal open = new BigDecimal((String) priceObject.get("1. open"));
                 BigDecimal high = new BigDecimal((String) priceObject.get("2. high"));
                 BigDecimal low = new BigDecimal((String) priceObject.get("3. low"));
                 BigDecimal close = new BigDecimal((String) priceObject.get("4. close"));
-                Integer volume = Integer.parseInt((String)priceObject.get("5. volume"));
+                Integer volume = Integer.parseInt((String) priceObject.get("5. volume"));
                 stockPrice.setOpen(open);
                 stockPrice.setClose(close);
                 stockPrice.setLow(low);
@@ -377,29 +492,66 @@ public class DBUtil {
 
         return returnList;
     }
-    public static StockPrice getLatestStockPrice(String symbol){
-       GregorianCalendar now = new GregorianCalendar();
-       now.setTimeInMillis(System.currentTimeMillis());
-       
-       return null;
+
+    public static StockPrice getLatestStockPrice(String symbol) {
+        List<StockPrice> apiPriceList = getStockInfoFromAPI(symbol);
+        List<StockPrice> dataBaseList = getPriceList(symbol);
+        StockPrice returnPrice = apiPriceList.get(0);
+        List<Timestamp> databaseTimeStampList = new ArrayList<>();
+        for(StockPrice databasePrice:dataBaseList){
+            databaseTimeStampList.add(databasePrice.getTimeStamp());
+        }
+        for (StockPrice apiPrice : apiPriceList) {
+            if (dataBaseList == null || !databaseTimeStampList.contains(apiPrice.getTimeStamp())) {
+                addStockPrice(apiPrice);
+            }
+            
+        }
+        return returnPrice;
     }
-    public static boolean marketsAreOpen(){
-       GregorianCalendar now = new GregorianCalendar();
-       now.setTimeInMillis(System.currentTimeMillis());
-       int dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
-       int hour = now.get(Calendar.HOUR_OF_DAY);
-       int minute = now.get(Calendar.MINUTE);
-       if(dayOfWeek == Calendar.SUNDAY || dayOfWeek == Calendar.SATURDAY){
-           return false;
-       }else if(hour>=16){
-           return false;
-       } else if(hour >= 9){
-           if(hour ==9 && minute<30){
-               return false;
-           }
-           return true;
-       }
-       //Logger.getLogger(DBUtil.class.getName()).log(Level.INFO,""+now.get(Calendar.HOUR_OF_DAY)+":"+now.get(Calendar.MINUTE)+":"+now.get(Calendar.SECOND));
-       return false;
+    public static boolean buyStock(String userEmail,int quantityToBuy,String symbol){
+        StockPrice latestStockPrice = DBUtil.getLatestStockPrice(symbol);
+        User buyer = DBUtil.getUser(userEmail);
+        BigDecimal newAccountBalance = buyer.getAccountBalance().subtract(
+                latestStockPrice.getClose().multiply(new BigDecimal(quantityToBuy)));
+        if(newAccountBalance.compareTo(BigDecimal.ZERO) < 0){
+            return false;
+        }
+        buyer.setAccountBalance(newAccountBalance);
+        updateUser(buyer);
+        PortfolioHolding newHolding = new PortfolioHolding();
+        newHolding.setOwnerEmail(userEmail);
+        newHolding.setQuantityHeld(quantityToBuy);
+        newHolding.setSymbol(symbol);
+        newHolding.setTimeStamp(latestStockPrice.getTimeStamp());
+        addUserHolding(newHolding);
+        return true;
+    }
+    private static void updateUser(User user){
+        //TODO Update User in DB
+    }
+    private static void addUserHolding(PortfolioHolding holding){
+        //TODO add user holding to correct Table
+    }
+
+    public static boolean marketsAreOpen() {
+        GregorianCalendar now = new GregorianCalendar();
+        now.setTimeInMillis(System.currentTimeMillis());
+        int dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
+        int hour = now.get(Calendar.HOUR_OF_DAY);
+        int minute = now.get(Calendar.MINUTE);
+        if (dayOfWeek == Calendar.SUNDAY || dayOfWeek == Calendar.SATURDAY) {
+            return false;
+        } else if (hour >= 16) {
+            return false;
+        } else if (hour >= 9) {
+            if (hour == 9 && minute < 30) {
+                return false;
+            }
+            //TODO add holidays in here
+            return true;
+        }
+        //Logger.getLogger(DBUtil.class.getName()).log(Level.INFO,""+now.get(Calendar.HOUR_OF_DAY)+":"+now.get(Calendar.MINUTE)+":"+now.get(Calendar.SECOND));
+        return false;
     }
 }

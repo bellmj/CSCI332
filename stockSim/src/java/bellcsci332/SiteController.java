@@ -49,33 +49,32 @@ public class SiteController extends HttpServlet {
         } else if (action.equals("displayProfile")) {
             String userEmail = request.getUserPrincipal().getName();
             boolean userIsAdmin = request.isUserInRole("admin");
-            if(!userIsAdmin){
+            if (!userIsAdmin) {
                 request.setAttribute("user", DBUtil.getUser(userEmail));
                 url = "/r/profile.jsp";
-            }else{
+            } else {
                 url = "/r/admin/adminHome.jsp";
             }
-        } else if(action.equals("adminViewNyseInfoTable")){
+        } else if (action.equals("adminViewNyseInfoTable")) {
             //todo get NyseInfoTable and pass it to displayNyseCompanyInfo.jsp
             List<CompanyInfo> nyseCompanyInfo = DBUtil.getNyseCompaniesInfo();
             request.setAttribute("companies", nyseCompanyInfo);
             url = "/r/admin/displayNyseCompanyInfo.jsp";
-          
-        } else if(action.equals("adminViewNasdaqInfoTable")){
+
+        } else if (action.equals("adminViewNasdaqInfoTable")) {
             List<CompanyInfo> nyseCompanyInfo = DBUtil.getNasdaqCompaniesInfo();
             request.setAttribute("companies", nyseCompanyInfo);
             url = "/r/admin/displayNasdaqCompanyInfo.jsp";
-          
-        } else if(action.equals("adminViewUserTable")){
+
+        } else if (action.equals("adminViewUserTable")) {
             List<User> users = DBUtil.getUsers();
             request.setAttribute("users", users);
             url = "/r/admin/displayUsers.jsp";
-          
-        } else if(action.equals("stockQuoteHome")){
-            request.setAttribute("symbols",DBUtil.getAllTickerSymbols());//pass a list of all symbols to the stockQuote jsp
+
+        } else if (action.equals("stockQuoteHome")) {
+            request.setAttribute("symbols", DBUtil.getAllTickerSymbols());//pass a list of all symbols to the stockQuote jsp
             url = "/r/getStockQuote.jsp";
-        }
-        else {
+        } else {
             url = "/index.html";
         }
 
@@ -102,44 +101,48 @@ public class SiteController extends HttpServlet {
             url = "/signup.jsp";
         } else if (action.equals("signup")) {
             url = signUp(request, response);
-        } else if (action.equals("getQuote")){
-            url = getQuote(request,response);
+        } else if (action.equals("getQuote")) {
+            url = getQuote(request, response);
+        } else if (action.equals("buyStock")){
+            url = buyStock(request,response);
         }
         getServletContext()
                 .getRequestDispatcher(url)
                 .forward(request, response);
+    }
+    private String buyStock(HttpServletRequest request,HttpServletResponse response){
+        String url = "/index.html";
+        String selectedSymbol = request.getParameter("stockSymbol");
+        String userEmail = request.getUserPrincipal().getName();
+        int numberOfShares = Integer.parseInt(request.getParameter("sharesToBuy"));
+        StockPrice latestStockPrice = DBUtil.getLatestStockPrice(selectedSymbol);
+        BigDecimal pricePerShare = latestStockPrice.getClose();
+        //TODO actually buy this many shares for the user and deduct from their account
+        Logger.getLogger(SiteController.class.getName()).log(Level.INFO,pricePerShare.toString());
+        return url;
     }
     private String getQuote(HttpServletRequest request, HttpServletResponse response) {
         String selectedSymbol = request.getParameter("symbol");
         String url = "/index.html";
         boolean symbolInNasdaq = DBUtil.symbolInNasdaq(selectedSymbol);
         boolean symbolInNyse = DBUtil.symbolInNyse(selectedSymbol);
-        if(!(symbolInNasdaq || symbolInNyse)){
+        if (!(symbolInNasdaq || symbolInNyse)) {
             //TODO redirect back to getStockQuote.jsp with an error message
             url = "/getStockQuote.jsp";
-        } else{
-            if(symbolInNasdaq){
-                //TODO check Nasdaq or NYSEPricesByTheMinute to see if symbol is in table and up to date
-                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "SymbolInNasdaq");
-                List<StockPrice> stockList = DBUtil.getStockInfoFromAPI(selectedSymbol);
-                request.setAttribute("stockList", stockList);
-                url = "/r/apiData.jsp";
-                DBUtil.marketsAreOpen();
-            }else if(symbolInNyse){
-                //TODO check Nasdaq or NYSEPricesByTheMinute to see if symbol is in table and up to date
-                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "SymbolInNyse");
-                List<StockPrice> stockList = DBUtil.getStockInfoFromAPI(selectedSymbol);
-                request.setAttribute("stockList", stockList);
-                url = "/r/apiData.jsp";
-                DBUtil.marketsAreOpen();
-            }
+        } else {
+
             //TODO check Nasdaq or NYSEPricesByTheMinute to see if symbol is in table and up to date
-            //TODO if symbol is not in database or needs to be updated then make api call and write the info to DB
-            //TODO pull updated symbol info and and add it to the request object
+            StockPrice latestStockPrice = DBUtil.getLatestStockPrice(selectedSymbol);
+            request.setAttribute("stockPrice", latestStockPrice);
+            String userEmail = request.getUserPrincipal().getName();
+            User user = DBUtil.getUser(userEmail);
+            request.setAttribute("user", user);
+            url = "/r/stockQuote.jsp";
         }
-        
+
         return url;
     }
+
     private String signUp(HttpServletRequest request, HttpServletResponse response) {
         User newUser = new User();
         String url = "/index.html";
@@ -170,7 +173,7 @@ public class SiteController extends HttpServlet {
             if (!userEmail.matches(DBUtil.EMAIL_REGEX)) {
                 request.setAttribute("emailErrorMessage", "(Please enter a valid email)");
             }
-            if(!userPassword1.equals(userPassword2)){
+            if (!userPassword1.equals(userPassword2)) {
                 request.setAttribute("passwordErrorMessage", "(Passwords don't match)");
             }
             request.setAttribute("user", newUser);
