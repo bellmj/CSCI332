@@ -118,6 +118,18 @@ SCRIPTS['stockPricesByTheMinute'] = (
     "CREATE VIEW stockPricesByTheMinute AS"
     " (SELECT * FROM NysePricesByTheMinute) UNION"
     " (SELECT * FROM NasdaqPricesByTheMinute);")
+SCRIPTS['getPrice'] =(
+    " CREATE FUNCTION `getPrice`(timme TIMESTAMP,givenSymbol VARCHAR(255)) RETURNS decimal(14,2)"
+        " BEGIN"
+            " DECLARE stockPrice DECIMAL(14,2);"
+            " SET stockPrice = (SELECT MAX(close) FROM stockPricesByTheMinute WHERE symbol = givenSymbol AND timestamp = timme);"
+            " return stockPrice;"
+        " END;")
+SCRIPTS['userHoldings'] = (
+    "CREATE VIEW userHoldings AS SELECT ownerEmail,symbol,quantityHeld,timestampWhenBought,getPrice(timestampOfStock,symbol)"
+    " AS pricePerShare,(quantityHeld*getPrice(timestampOfStock,symbol)) AS amountPaid"
+    " FROM portfolioholdingsview;")
+
 
 def main():
     #============================================================================================================
@@ -144,7 +156,7 @@ def main():
     for name, ddl in TABLES.items():
         try:
             print("Creating table {}: ".format(name), end='')
-            sleep(0.2)
+
             cursor.execute(ddl)
         except mysql.connector.Error as err:
             if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
@@ -153,25 +165,21 @@ def main():
                 print(err.msg)
         else:
             print("OK")
-            sleep(0.2)
     try:
         cursor.execute(getNasdaqInsertDDLFromFile())
     except mysql.connector.Error as err:
         print(err.msg)
     else:
         print("Inserted New NASDAQ Data")
-        sleep(0.2)
     try:
         cursor.execute(getNYSEInsertDDLFromFile())
     except mysql.connector.Error as err:
         print(err.msg)
     else:
         print("Inserted New NYSE Data")
-        sleep(0.2)
     for name, ddl in SCRIPTS.items():
         try:
             print("Running SQL Script {}: ".format(name), end='')
-            sleep(0.2)
             cursor.execute(ddl)
         except mysql.connector.Error as err:
                 print(err.msg)

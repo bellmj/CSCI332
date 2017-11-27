@@ -6,6 +6,7 @@
 package bellcsci332;
 
 import bellcsci332.business.CompanyInfo;
+import bellcsci332.business.PortfolioHolding;
 import bellcsci332.business.StockPrice;
 import bellcsci332.business.User;
 import bellcsci332.data.DBUtil;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,7 +77,16 @@ public class SiteController extends HttpServlet {
             request.setAttribute("symbols", DBUtil.getAllTickerSymbols());//pass a list of all symbols to the stockQuote jsp
             request.setAttribute("userEmail", "userEmial");
             url = "/r/getStockQuote.jsp";
-        } else {
+        } else if(action.equals("viewUserHoldings")){
+            List<PortfolioHolding> userHoldings = DBUtil.getUsersHoldings(request.getUserPrincipal().getName());
+            List<StockPrice> latestStockPrice = new ArrayList<>();
+            for(PortfolioHolding ph:userHoldings){
+                latestStockPrice.add(DBUtil.getLatestStockPrice(ph.getSymbol()));//TODO maybe optimize these method calls
+            }
+            request.setAttribute("holdingsLatestPrice",latestStockPrice);
+            request.setAttribute("userHoldings", userHoldings);
+            url = "/r/userHoldings.jsp";
+        }else {
             url = "/index.html";
         }
 
@@ -116,11 +127,9 @@ public class SiteController extends HttpServlet {
         String selectedSymbol = request.getParameter("stockSymbol");
         String userEmail = request.getUserPrincipal().getName();
         int numberOfShares = Integer.parseInt(request.getParameter("sharesToBuy"));
-        StockPrice latestStockPrice = DBUtil.getLatestStockPrice(selectedSymbol);
-        BigDecimal pricePerShare = latestStockPrice.getClose();
-        //TODO actually buy this many shares for the user and deduct from their account
         DBUtil.buyStock(userEmail, numberOfShares, selectedSymbol);
-        Logger.getLogger(SiteController.class.getName()).log(Level.INFO,pricePerShare.toString());
+        request.setAttribute("user", DBUtil.getUser(userEmail));
+        url = "/r/profile.jsp";
         return url;
     }
     private String getQuote(HttpServletRequest request, HttpServletResponse response) {

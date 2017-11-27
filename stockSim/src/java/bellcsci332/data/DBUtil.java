@@ -309,6 +309,7 @@ public class DBUtil {
                 + "ownerEmail = ?;";
         try {
             ps = connection.prepareStatement(query);
+            ps.setString(1,email);
             rs = ps.executeQuery();
             List<PortfolioHolding> userHoldingsList = new ArrayList<>();
             while (rs.next()) {
@@ -321,6 +322,7 @@ public class DBUtil {
             }
             return userHoldingsList;
         } catch (SQLException e) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.INFO,null,e);
             return null;
         } finally {
             try {
@@ -733,7 +735,10 @@ public class DBUtil {
             pool.freeConnection(connection);
         }
     }
-
+    public static boolean stockPriceIsUpToDate(){
+        //todo implement this method
+        return false;
+    }
     public static boolean marketsAreOpen() {
         GregorianCalendar now = new GregorianCalendar();
         now.setTimeInMillis(System.currentTimeMillis());
