@@ -119,11 +119,25 @@ SCRIPTS['stockPricesByTheMinute'] = (
     " (SELECT * FROM NysePricesByTheMinute) UNION"
     " (SELECT * FROM NasdaqPricesByTheMinute);")
 SCRIPTS['getPrice'] =(
-    " CREATE FUNCTION `getPrice`(timme TIMESTAMP,givenSymbol VARCHAR(255)) RETURNS decimal(14,2)"
+    " CREATE FUNCTION getPrice(timme TIMESTAMP,givenSymbol VARCHAR(255)) RETURNS decimal(14,2)"
         " BEGIN"
             " DECLARE stockPrice DECIMAL(14,2);"
             " SET stockPrice = (SELECT MAX(close) FROM stockPricesByTheMinute WHERE symbol = givenSymbol AND timestamp = timme);"
             " return stockPrice;"
+        " END;")
+SCRIPTS['symbolInNasdaq'] =(
+    " CREATE FUNCTION symbolInNasdaq (givenSymbol VARCHAR(255)) RETURNS BOOLEAN"
+        " BEGIN"
+            " DECLARE symbolExists BOOLEAN;"
+            " SET symbolExists = (0=(SELECT COUNT(symbol) FROM NasdaqCompanyInfo WHERE symbol = givenSymbol));"
+            " return symbolExists;"
+        " END;")
+SCRIPTS['symbolInNyse'] =(
+    " CREATE FUNCTION symbolInNyse (givenSymbol VARCHAR(255)) RETURNS BOOLEAN"
+        " BEGIN"
+            " DECLARE symbolExists BOOLEAN;"
+            " SET symbolExists = (0=(SELECT COUNT(symbol) FROM NyseCompanyInfo WHERE symbol = givenSymbol));"
+            " return symbolExists;"
         " END;")
 SCRIPTS['userHoldings'] = (
     "CREATE VIEW userHoldings AS SELECT ownerEmail,symbol,quantityHeld,timestampWhenBought,getPrice(timestampOfStock,symbol)"
@@ -134,7 +148,15 @@ SCRIPTS['simpleUserHoldings'] = (
     " AS avgPricePerShare"
     " FROM portfolioholdingsview"
     " GROUP BY ownerEmail,symbol")
-
+# SCRIPTS['sellStockProcedure'] = (
+#     "CREATE PROCEDURE sellStock(ownerEmail VARCHAR(255),symbolToSell VARCHAR(16),sharesToSell INT)"
+#         " BEGIN"
+#             " DECLARE numberOfStockHeld Int;"
+#             " SET numberOfStockHeld = (SELECT s1.quantityHeld FROM simpleUserHoldings as s1"
+#             " WHERE s1.symbol = symbolToSell AND s1.ownerEmail = ownerEmail);"
+#             " IF numberOfStockHeld >= sharesToSell THEN"
+#             " "
+#
 
 def main():
     #============================================================================================================
