@@ -129,6 +129,11 @@ SCRIPTS['userHoldings'] = (
     "CREATE VIEW userHoldings AS SELECT ownerEmail,symbol,quantityHeld,timestampWhenBought,getPrice(timestampOfStock,symbol)"
     " AS pricePerShare,(quantityHeld*getPrice(timestampOfStock,symbol)) AS amountPaid"
     " FROM portfolioholdingsview;")
+SCRIPTS['simpleUserHoldings'] = (
+    "CREATE VIEW simpleUserHoldings AS SELECT ownerEmail,symbol,SUM(quantityHeld) AS quantityHeld,AVG(getPrice(timestampOfStock,symbol))"
+    " AS avgPricePerShare"
+    " FROM portfolioholdingsview"
+    " GROUP BY ownerEmail,symbol")
 
 
 def main():

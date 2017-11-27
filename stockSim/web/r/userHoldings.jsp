@@ -19,14 +19,19 @@
             <tr>
                 <th>Symbol</th>
                 <th>Quantity Held</th>
+                <th>Average Price Per Share</th>
                 <th>Current Price</th>
+                <th>Percent Change</th>
+                
             </tr>
             <c:forEach var="holding" items="${userHoldings}" varStatus="status">
             <tr>
-                <td>${holding.symbol}</td>
+                <td>${holding.symbolOwned}</td>
                 <td>${holding.quantityHeld}</td>
+                <td><fmt:formatNumber value="${holding.averagePricePerShare}" type="currency"/></td>
                 <td><fmt:formatNumber value="${holdingsLatestPrice[status.index].close}" type="currency"/></td>
-                <td><a href="/marketSim?action=sellStock&symbol=${holding.symbol}">Sell</a></td>
+                <td>${precentGainList[status.index]}%</td>
+                <td><a href="/marketSim?action=sellStock&symbol=${holding.symbolOwned}">Sell</a></td>
             </tr>
             </c:forEach>
         </table>

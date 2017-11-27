@@ -342,7 +342,48 @@ public class DBUtil {
             pool.freeConnection(connection);
         }
     }
-
+    public static Portfolio getPortfolio(String email){
+        Portfolio returnPortfolio = new Portfolio();
+        returnPortfolio.setOwnerEmail(email);
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        String query = "SELECT * FROM simpleUserHoldings"
+                + " WHERE ownerEmail = ?;";
+        try {
+            ps = connection.prepareStatement(query);
+            ps.setString(1, email);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                SimplePortfolioHolding newHolding = new SimplePortfolioHolding();
+                newHolding.setSymbolOwned(rs.getString("symbol"));
+                newHolding.setQuantityHeld(rs.getInt("quantityHeld"));
+                newHolding.setAveragePricePerShare(rs.getBigDecimal("avgPricePerShare"));
+                returnPortfolio.addPortfolioHolding(newHolding);
+            }
+            return returnPortfolio;
+        } catch (SQLException e) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
+            return null;
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
+    }
     public static List<StockPrice> getPriceList(String symbol) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();

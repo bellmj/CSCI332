@@ -7,6 +7,7 @@ package bellcsci332;
 
 import bellcsci332.business.CompanyInfo;
 import bellcsci332.business.PortfolioHolding;
+import bellcsci332.business.SimplePortfolioHolding;
 import bellcsci332.business.StockPrice;
 import bellcsci332.business.User;
 import bellcsci332.data.DBUtil;
@@ -78,11 +79,18 @@ public class SiteController extends HttpServlet {
             request.setAttribute("userEmail", "userEmial");
             url = "/r/getStockQuote.jsp";
         } else if(action.equals("viewUserHoldings")){
-            List<PortfolioHolding> userHoldings = DBUtil.getUsersHoldings(request.getUserPrincipal().getName());
+            List<SimplePortfolioHolding> userHoldings = 
+                    DBUtil.getPortfolio(request.getUserPrincipal().getName()).getPortfolioHoldings();
             List<StockPrice> latestStockPrice = new ArrayList<>();
-            for(PortfolioHolding ph:userHoldings){
-                latestStockPrice.add(DBUtil.getLatestStockPrice(ph.getSymbol()));//TODO maybe optimize these method calls
+            List<BigDecimal> precentGainList = new ArrayList<>();
+            for(SimplePortfolioHolding ph:userHoldings){
+                latestStockPrice.add(DBUtil.getLatestStockPrice(ph.getSymbolOwned()));//TODO maybe optimize these method calls
+                BigDecimal precentChange = ph.getAveragePricePerShare().subtract(latestStockPrice.get(latestStockPrice.size()-1).getClose())
+                        .divide(ph.getAveragePricePerShare()).multiply(new BigDecimal("100.0"));
+                Logger.getLogger(SiteController.class.getName()).log(Level.INFO,precentChange.toString());
+                precentGainList.add(precentChange);
             }
+            request.setAttribute("precentGainList",precentGainList);
             request.setAttribute("holdingsLatestPrice",latestStockPrice);
             request.setAttribute("userHoldings", userHoldings);
             url = "/r/userHoldings.jsp";
