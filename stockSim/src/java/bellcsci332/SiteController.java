@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -85,9 +86,10 @@ public class SiteController extends HttpServlet {
             List<BigDecimal> precentGainList = new ArrayList<>();
             for(SimplePortfolioHolding ph:userHoldings){
                 latestStockPrice.add(DBUtil.getLatestStockPrice(ph.getSymbolOwned()));//TODO maybe optimize these method calls
-                BigDecimal precentChange = ph.getAveragePricePerShare().subtract(latestStockPrice.get(latestStockPrice.size()-1).getClose())
-                        .divide(ph.getAveragePricePerShare()).multiply(new BigDecimal("100.0"));
-                Logger.getLogger(SiteController.class.getName()).log(Level.INFO,precentChange.toString());
+                BigDecimal precentChange = ph.getAveragePricePerShare().subtract(latestStockPrice.get(latestStockPrice.size()-1).getClose());
+//                Logger.getLogger(SiteController.class.getName()).log(Level.INFO,precentChange.toString());
+                precentChange = precentChange.divide(ph.getAveragePricePerShare(), 10, RoundingMode.HALF_UP).multiply(new BigDecimal("-100.0"));
+//                Logger.getLogger(SiteController.class.getName()).log(Level.INFO,precentChange.toString());
                 precentGainList.add(precentChange);
             }
             request.setAttribute("precentGainList",precentGainList);
