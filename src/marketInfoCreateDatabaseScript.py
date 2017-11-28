@@ -148,6 +148,11 @@ SCRIPTS['symbolInNyse'] =(
             " SET symbolExists = (1=(SELECT COUNT(symbol) FROM NyseCompanyInfo WHERE symbol = givenSymbol));"
             " return symbolExists;"
         " END;")
+SCRIPTS['getNumberOfStockHeld'] = (
+    "CREATE FUNCTION getNumberOfStockHeld (givenSymbol VARCHAR(255),email VARCHAR(255)) RETURNS INT"
+    " BEGIN"
+    " return (SELECT s1.quantityHeld FROM simpleUserHoldings as s1 WHERE s1.symbol = givenSymbol AND s1.ownerEmail = email LIMIT 1);"
+    " END;")
 SCRIPTS['userHoldings'] = (
     "CREATE VIEW userHoldings AS SELECT ownerEmail,symbol,quantityHeld,timestampWhenBought,getPrice(timestampOfStock,symbol)"
     " AS pricePerShare,(quantityHeld*getPrice(timestampOfStock,symbol)) AS amountPaid"

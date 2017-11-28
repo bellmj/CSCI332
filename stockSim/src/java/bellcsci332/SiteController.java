@@ -96,6 +96,12 @@ public class SiteController extends HttpServlet {
             request.setAttribute("holdingsLatestPrice",latestStockPrice);
             request.setAttribute("userHoldings", userHoldings);
             url = "/r/userHoldings.jsp";
+        } else if(action.equals("sellStock")){
+            String symbol = request.getParameter("symbol");
+            int sharesOfSymbolHeld = DBUtil.getNumberOfHoldingsForStock(symbol,request.getUserPrincipal().getName());
+            request.setAttribute("symbol", symbol);
+            request.setAttribute("sharesOfSymbolHeld", sharesOfSymbolHeld);
+            url = "/r/sellStock.jsp";
         }else {
             url = "/index.html";
         }
@@ -127,10 +133,22 @@ public class SiteController extends HttpServlet {
             url = getQuote(request, response);
         } else if (action.equals("buyStock")){
             url = buyStock(request,response);
+        } else if (action.equals("sellStock")){
+            url = sellStock(request,response);
         }
         getServletContext()
                 .getRequestDispatcher(url)
                 .forward(request, response);
+    }
+    private String sellStock(HttpServletRequest request,HttpServletResponse response){
+        String url = "/index.html";
+        String symbolToSell = request.getParameter("symbolToSell");
+        int quantityToSell = Integer.parseInt(request.getParameter("numberOfSharesToSell"));
+        String userEmail = request.getUserPrincipal().getName();
+        DBUtil.sellStock(userEmail, symbolToSell, quantityToSell);
+        request.setAttribute("user", DBUtil.getUser(userEmail));
+        url = "/r/profile.jsp";
+        return url;
     }
     private String buyStock(HttpServletRequest request,HttpServletResponse response){
         String url = "/index.html";

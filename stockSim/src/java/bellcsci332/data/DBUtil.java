@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.CallableStatement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -707,7 +708,32 @@ public class DBUtil {
         addUserHolding(newHolding);
         return true;
     }
-
+    public static boolean sellStock(String userEmail, String symbolToSell,int quantityToSell){
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        CallableStatement stmt = null;
+        try {
+            stmt = connection.prepareCall("{CALL sellStock(?,?,?)}");
+            stmt.setString(1, userEmail);
+            stmt.setString(2,symbolToSell);
+            stmt.setInt(3, quantityToSell);
+            stmt.execute();
+        } catch (SQLException ex) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        } finally{
+            try{
+                if(stmt != null){
+                    stmt.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+                return false;
+            }
+            pool.freeConnection(connection);
+        }
+        return true;
+    }
     private static void updateUser(User user) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
@@ -779,6 +805,33 @@ public class DBUtil {
     public static boolean stockPriceIsUpToDate(){
         //todo implement this method
         return false;
+    }
+    public static int getNumberOfHoldingsForStock(String symbol,String ownerEmail){
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        PreparedStatement stmt = null;
+        int returnVal = 0;
+        try {
+            stmt = connection.prepareStatement("SELECT getNumberOfStockHeld(?,?)");
+            stmt.setString(1, symbol);
+            stmt.setString(2,ownerEmail);
+            ResultSet rs = stmt.executeQuery();
+            if(rs.next()){
+                returnVal = rs.getInt(1);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+        } finally{
+            try{
+                if(stmt != null){
+                    stmt.close();
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            pool.freeConnection(connection);
+        }
+        return returnVal;
     }
     public static boolean marketsAreOpen() {
         GregorianCalendar now = new GregorianCalendar();
