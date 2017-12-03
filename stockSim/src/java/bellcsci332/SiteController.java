@@ -12,17 +12,22 @@ import bellcsci332.business.StockPrice;
 import bellcsci332.business.User;
 import bellcsci332.data.DBUtil;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URLEncoder;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import javax.xml.bind.DatatypeConverter;
 
 /**
  *
@@ -43,6 +48,7 @@ public class SiteController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
+        Logger.getLogger(SiteController.class.getName()).log(Level.INFO, action);
         String url = "null";
         if (action == null) {
             url = "/index.html";
@@ -57,7 +63,10 @@ public class SiteController extends HttpServlet {
                 request.setAttribute("user", DBUtil.getUser(userEmail));
                 url = "/r/profile.jsp";
             } else {
-                url = "/r/admin/adminHome.jsp";
+                request.setAttribute("adminHomeLink", "/r/admin/adminHome.jsp");
+                request.setAttribute("adminHomeText", "Admin Home");
+                request.setAttribute("user", DBUtil.getUser(userEmail));
+                url = "/r/profile.jsp";
             }
         } else if (action.equals("adminViewNyseInfoTable")) {
             //todo get NyseInfoTable and pass it to displayNyseCompanyInfo.jsp
@@ -79,30 +88,70 @@ public class SiteController extends HttpServlet {
             request.setAttribute("symbols", DBUtil.getAllTickerSymbols());//pass a list of all symbols to the stockQuote jsp
             request.setAttribute("userEmail", "userEmial");
             url = "/r/getStockQuote.jsp";
-        } else if(action.equals("viewUserHoldings")){
-            List<SimplePortfolioHolding> userHoldings = 
-                    DBUtil.getPortfolio(request.getUserPrincipal().getName()).getPortfolioHoldings();
+        } else if (action.equals("viewUserHoldings")) {
+            List<SimplePortfolioHolding> userHoldings
+                    = DBUtil.getPortfolio(request.getUserPrincipal().getName()).getPortfolioHoldings();
             List<StockPrice> latestStockPrice = new ArrayList<>();
             List<BigDecimal> precentGainList = new ArrayList<>();
-            for(SimplePortfolioHolding ph:userHoldings){
+            for (SimplePortfolioHolding ph : userHoldings) {
                 latestStockPrice.add(DBUtil.getLatestStockPrice(ph.getSymbolOwned()));//TODO maybe optimize these method calls
-                BigDecimal precentChange = ph.getAveragePricePerShare().subtract(latestStockPrice.get(latestStockPrice.size()-1).getClose());
+                BigDecimal precentChange = ph.getAveragePricePerShare().subtract(latestStockPrice.get(latestStockPrice.size() - 1).getClose());
 //                Logger.getLogger(SiteController.class.getName()).log(Level.INFO,precentChange.toString());
                 precentChange = precentChange.divide(ph.getAveragePricePerShare(), 10, RoundingMode.HALF_UP).multiply(new BigDecimal("-100.0"));
 //                Logger.getLogger(SiteController.class.getName()).log(Level.INFO,precentChange.toString());
                 precentGainList.add(precentChange);
             }
-            request.setAttribute("precentGainList",precentGainList);
-            request.setAttribute("holdingsLatestPrice",latestStockPrice);
+            request.setAttribute("precentGainList", precentGainList);
+            request.setAttribute("holdingsLatestPrice", latestStockPrice);
             request.setAttribute("userHoldings", userHoldings);
             url = "/r/userHoldings.jsp";
-        } else if(action.equals("sellStock")){
+        } else if (action.equals("sellStock")) {
             String symbol = request.getParameter("symbol");
-            int sharesOfSymbolHeld = DBUtil.getNumberOfHoldingsForStock(symbol,request.getUserPrincipal().getName());
+            int sharesOfSymbolHeld = DBUtil.getNumberOfHoldingsForStock(symbol, request.getUserPrincipal().getName());
             request.setAttribute("symbol", symbol);
             request.setAttribute("sharesOfSymbolHeld", sharesOfSymbolHeld);
             url = "/r/sellStock.jsp";
-        }else {
+        } else if (action.equals("editUserName")) {
+            String userEmail = request.getUserPrincipal().getName();
+            request.setAttribute("user", DBUtil.getUser(userEmail));
+            url = "/r/editUserName.jsp";
+        } else if (action.equals("editAccountBalance")) {
+            String userEmail = request.getUserPrincipal().getName();
+            request.setAttribute("user", DBUtil.getUser(userEmail));
+            url = "/r/editAccountBalance.jsp";
+        } else if (action.equals("changePassword")) {
+            url = "/r/changePass.jsp";
+        } else if (action.equals("adminViewUserHoldings")) {
+            List<SimplePortfolioHolding> userHoldings
+                    = DBUtil.getPortfolio((String) request.getParameter("email")).getPortfolioHoldings();
+            List<StockPrice> latestStockPrice = new ArrayList<>();
+            List<BigDecimal> precentGainList = new ArrayList<>();
+            for (SimplePortfolioHolding ph : userHoldings) {
+                latestStockPrice.add(DBUtil.getLatestStockPrice(ph.getSymbolOwned()));//TODO maybe optimize these method calls
+                BigDecimal precentChange = ph.getAveragePricePerShare().subtract(latestStockPrice.get(latestStockPrice.size() - 1).getClose());
+//                Logger.getLogger(SiteController.class.getName()).log(Level.INFO,precentChange.toString());
+                precentChange = precentChange.divide(ph.getAveragePricePerShare(), 10, RoundingMode.HALF_UP).multiply(new BigDecimal("-100.0"));
+//                Logger.getLogger(SiteController.class.getName()).log(Level.INFO,precentChange.toString());
+                precentGainList.add(precentChange);
+            }
+            request.setAttribute("precentGainList", precentGainList);
+            request.setAttribute("holdingsLatestPrice", latestStockPrice);
+            request.setAttribute("userHoldings", userHoldings);
+            request.setAttribute("user", DBUtil.getUser((String) request.getParameter("email")));
+            url = "/r/admin/viewUserHoldings.jsp";
+        } else if (action.equals("adminEnterUserMode")) {
+            String userEmail = request.getUserPrincipal().getName();
+            boolean userIsAdmin = request.isUserInRole("admin");
+            if (!userIsAdmin) {
+                request.setAttribute("user", DBUtil.getUser(userEmail));
+                url = "/r/profile.jsp";
+            } else {
+                request.setAttribute("adminHomeLink", "/r/admin/adminHome.jsp");
+                request.setAttribute("adminHomeText", "Admin Home");
+                request.setAttribute("user", DBUtil.getUser(userEmail));
+                url = "/r/profile.jsp";
+            }
+        } else {
             url = "/index.html";
         }
 
@@ -131,35 +180,111 @@ public class SiteController extends HttpServlet {
             url = signUp(request, response);
         } else if (action.equals("getQuote")) {
             url = getQuote(request, response);
-        } else if (action.equals("buyStock")){
-            url = buyStock(request,response);
-        } else if (action.equals("sellStock")){
-            url = sellStock(request,response);
+        } else if (action.equals("buyStock")) {
+            url = buyStock(request, response);
+        } else if (action.equals("sellStock")) {
+            url = sellStock(request, response);
+        } else if (action.equals("editUserName")) {
+            String newName = request.getParameter("name");
+            User user = DBUtil.getUser(request.getUserPrincipal().getName());
+            user.setName(newName);
+            DBUtil.updateUser(user);
+            boolean userIsAdmin = request.isUserInRole("admin");
+            if (!userIsAdmin) {
+                request.setAttribute("user", user);
+                url = "/r/profile.jsp";
+            } else {
+                request.setAttribute("adminHomeLink", "/r/admin/adminHome.jsp");
+                request.setAttribute("adminHomeText", "Admin Home");
+                request.setAttribute("user", user);
+                url = "/r/profile.jsp";
+            }
+        } else if (action.equals("editUserAccountBalance")) {
+            BigDecimal newAccountBalance = new BigDecimal(request.getParameter("accountBalance"));
+            User user = DBUtil.getUser(request.getUserPrincipal().getName());
+            user.setAccountBalance(newAccountBalance);
+            DBUtil.updateUser(user);
+            boolean userIsAdmin = request.isUserInRole("admin");
+            if (!userIsAdmin) {
+                request.setAttribute("user", user);
+                url = "/r/profile.jsp";
+            } else {
+                request.setAttribute("adminHomeLink", "/r/admin/adminHome.jsp");
+                request.setAttribute("adminHomeText", "Admin Home");
+                request.setAttribute("user", user);
+                url = "/r/profile.jsp";
+            }
+        } else if (action.equals("changePass")) {
+            User user = DBUtil.getUser(request.getUserPrincipal().getName());
+            String oldPass = request.getParameter("password");
+            String newPassword = request.getParameter("newPassword");
+            String newPasswordConfirm = request.getParameter("newPasswordConfirm");
+            if (!newPassword.equals(newPasswordConfirm)) {
+                request.setAttribute("newPasswordErrorMessage", "New passwords do not match");
+                url = "/r/changePass.jsp";
+            }
+            if (!oldPass.equals(user.getPassword())) {
+                request.setAttribute("oldPasswordErrorMessage", "User password Invalid");
+                url = "/r/changePass.jsp";
+            }
+            if (newPassword.equals(newPasswordConfirm) && oldPass.equals(user.getPassword())) {
+                user.setPassword(newPassword);
+                DBUtil.updateUser(user);
+                boolean userIsAdmin = request.isUserInRole("admin");
+                if (!userIsAdmin) {
+                    request.setAttribute("user", user);
+                    url = "/r/profile.jsp";
+                } else {
+                    request.setAttribute("adminHomeLink", "/r/admin/adminHome.jsp");
+                    request.setAttribute("adminHomeText", "Admin Home");
+                    request.setAttribute("user", user);
+                    url = "/r/profile.jsp";
+                }
+            }
         }
         getServletContext()
                 .getRequestDispatcher(url)
                 .forward(request, response);
     }
-    private String sellStock(HttpServletRequest request,HttpServletResponse response){
+
+    private String sellStock(HttpServletRequest request, HttpServletResponse response) {
         String url = "/index.html";
         String symbolToSell = request.getParameter("symbolToSell");
         int quantityToSell = Integer.parseInt(request.getParameter("numberOfSharesToSell"));
         String userEmail = request.getUserPrincipal().getName();
         DBUtil.sellStock(userEmail, symbolToSell, quantityToSell);
-        request.setAttribute("user", DBUtil.getUser(userEmail));
-        url = "/r/profile.jsp";
+        boolean userIsAdmin = request.isUserInRole("admin");
+        if (!userIsAdmin) {
+            request.setAttribute("user", DBUtil.getUser(userEmail));
+            url = "/r/profile.jsp";
+        } else {
+            request.setAttribute("adminHomeLink", "/r/admin/adminHome.jsp");
+            request.setAttribute("adminHomeText", "Admin Home");
+            request.setAttribute("user", DBUtil.getUser(userEmail));
+            url = "/r/profile.jsp";
+        }
         return url;
     }
-    private String buyStock(HttpServletRequest request,HttpServletResponse response){
+
+    private String buyStock(HttpServletRequest request, HttpServletResponse response) {
         String url = "/index.html";
         String selectedSymbol = request.getParameter("stockSymbol");
         String userEmail = request.getUserPrincipal().getName();
         int numberOfShares = Integer.parseInt(request.getParameter("sharesToBuy"));
         DBUtil.buyStock(userEmail, numberOfShares, selectedSymbol);
-        request.setAttribute("user", DBUtil.getUser(userEmail));
-        url = "/r/profile.jsp";
+        boolean userIsAdmin = request.isUserInRole("admin");
+        if (!userIsAdmin) {
+            request.setAttribute("user", DBUtil.getUser(userEmail));
+            url = "/r/profile.jsp";
+        } else {
+            request.setAttribute("adminHomeLink", "/r/admin/adminHome.jsp");
+            request.setAttribute("adminHomeText", "Admin Home");
+            request.setAttribute("user", DBUtil.getUser(userEmail));
+            url = "/r/profile.jsp";
+        }
         return url;
     }
+
     private String getQuote(HttpServletRequest request, HttpServletResponse response) {
         String selectedSymbol = request.getParameter("symbol");
         String url = "/index.html";
@@ -187,32 +312,49 @@ public class SiteController extends HttpServlet {
         String url = "/index.html";
         //TODO validate user input; redirect back to signup if something is wrong
         //TODO hashUser password
+        MessageDigest digest;
+        String hashedPass = "";
+        String hashedPassConfirm = "";
+//        try {
+//            digest = MessageDigest.getInstance("SHA-256");
+//            byte[] hashedPassByteArray = digest.digest(request.getParameter("password").getBytes("UTF-8"));
+//            byte[] hashedPassConfirmByteArray = digest.digest(request.getParameter("passwordConfirm").getBytes("UTF-8"));
+//            hashedPass = DatatypeConverter.printHexBinary(hashedPassByteArray);
+//            hashedPassConfirm = DatatypeConverter.printHexBinary(hashedPassConfirmByteArray);
+//            
+//        } catch (NoSuchAlgorithmException ex) {
+//            Logger.getLogger(SiteController.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (UnsupportedEncodingException ex) {
+//            Logger.getLogger(SiteController.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//	Logger.getLogger(SiteController.class.getName()).log(Level.INFO,"Hashed Pass:" + hashedPass);
+
         String userName = (String) request.getParameter("name");
+        String password = (String) request.getParameter("password");
+        String passConfirm = (String) request.getParameter("passwordConfirm");
         String userEmail = (String) request.getParameter("email");
-        String userPassword1 = (String) request.getParameter("password");
-        String userPassword2 = (String) request.getParameter("passwordConfirm");
         BigDecimal initialAccountBalance = new BigDecimal((String) request.getParameter("initialBalance"));
 
         newUser.setName(userName);
-        newUser.setEmail((String) request.getParameter("email"));
+        newUser.setEmail(userEmail);
         newUser.setAccountBalance(initialAccountBalance);
-        newUser.setPassword((String) request.getParameter("password"));
+        newUser.setPassword(password);
 
         if (userName.matches(DBUtil.NAME_REGEX) && userEmail.matches(DBUtil.EMAIL_REGEX)
-                && userPassword1.equals(userPassword2)) {
-
+                && password.equals(passConfirm) && !password.equals("")) {
             DBUtil.addUser(newUser);
-            request.setAttribute("user", newUser);
-            url = "/r/profile.jsp";
+            url = "/welcomesignup.jsp";
+
         } else {
             //TODO ensure that the users email is not already contained in the DB
             if (!userName.matches(DBUtil.NAME_REGEX)) {
-                request.setAttribute("nameErrorMessage", "(Name must include first and last name only seperated by a space)");
+                request.setAttribute("nameErrorMessage",
+                        "(Name must include first and last name only seperated by a space)");
             }
             if (!userEmail.matches(DBUtil.EMAIL_REGEX)) {
                 request.setAttribute("emailErrorMessage", "(Please enter a valid email)");
             }
-            if (!userPassword1.equals(userPassword2)) {
+            if (!hashedPass.equals(hashedPassConfirm) || hashedPass.equals("")) {
                 request.setAttribute("passwordErrorMessage", "(Passwords don't match)");
             }
             request.setAttribute("user", newUser);

@@ -734,7 +734,7 @@ public class DBUtil {
         }
         return true;
     }
-    private static void updateUser(User user) {
+    public static void updateUser(User user) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
         PreparedStatement ps = null;

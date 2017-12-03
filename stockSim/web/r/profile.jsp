@@ -16,8 +16,11 @@
         <a href="<c:url value='/marketSim?action=stockQuoteHome'/>">Get Stock Quote</a>
         <br>
         <a href="<c:url value='/marketSim?action=viewUserHoldings'/>">View My Stocks</a>
-        <p>Welcome ${user.name}</p>
+        <p>Welcome ${user.name}<a href="<c:url value='/marketSim?action=editUserName'/>"> (Edit Name)</a></p>
+        <p>Your current account balance is $${user.accountBalance}
+            <a href="<c:url value='/marketSim?action=editAccountBalance'/>">(Edit)</a></p>
+        <a href="<c:url value='/marketSim?action=changePassword'/>">Change Password</a>
         <br>
-        <p>Your current account balance is $${user.accountBalance}</p>
+        <a href="<c:url value='${adminHomeLink}'/>">${adminHomeText}</a>
     </body>
 </html>

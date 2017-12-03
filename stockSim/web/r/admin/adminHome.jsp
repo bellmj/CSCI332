@@ -18,7 +18,9 @@
         <br>
         <a href="<c:url value='/marketSim?action=adminViewNasdaqInfoTable'/>">View Nasdaq Company List</a>
         <br>
-        <a href="<c:url value='/marketSim?action=adminViewUserTable'/>">View User</a>
+        <a href="<c:url value='/marketSim?action=adminViewUserTable'/>">View Users</a>
+        <br>
+        <a href="<c:url value='/marketSim?action=adminEnterUserMode'/>">Enter User Mode</a>
         
         
     </body>

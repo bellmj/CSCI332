@@ -25,6 +25,8 @@
                 <td>${user.name}</td>
                 <td>${user.email}</td>
                 <td>$${user.accountBalance}</td>
+                <td><a href="<c:url value='/marketSim?action=adminViewUserHoldings&email=${user.email}'/>">View Holdings
+                    </a></td>
             </tr>
             </c:forEach>
         </table>

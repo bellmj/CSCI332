@@ -30,7 +30,8 @@
                 <td>${holding.quantityHeld}</td>
                 <td><fmt:formatNumber value="${holding.averagePricePerShare}" type="currency"/></td>
                 <td><fmt:formatNumber value="${holdingsLatestPrice[status.index].close}" type="currency"/></td>
-                <td>${precentGainList[status.index]}%</td>
+                <td><fmt:formatNumber type = "number" 
+         maxFractionDigits = "2" value = "${precentGainList[status.index]}"/>%</td>
                 <td><a href="/marketSim?action=sellStock&symbol=${holding.symbolOwned}">Sell</a></td>
             </tr>
             </c:forEach>
