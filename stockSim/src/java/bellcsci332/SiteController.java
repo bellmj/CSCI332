@@ -300,6 +300,9 @@ public class SiteController extends HttpServlet {
             request.setAttribute("stockPrice", latestStockPrice);
             String userEmail = request.getUserPrincipal().getName();
             User user = DBUtil.getUser(userEmail);
+            int maxStock = user.getAccountBalance().divide(latestStockPrice.getClose(), 10, RoundingMode.HALF_UP).intValue();
+//            Logger.getLogger(SiteController.class.getName()).log(Level.INFO,"max Stock is:" + maxStock);
+            request.setAttribute("maxStock",maxStock);
             request.setAttribute("user", user);
             url = "/r/stockQuote.jsp";
         }
