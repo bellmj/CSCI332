@@ -1,6 +1,6 @@
 # CSCI332
-This project is a stockmarketSimulator written with Java servlet and JSP with a mySql Backend
-It is recommended to execute the include pythonScript to stand up the initial DB
+This project is a stock market simulator written with Java servlet and JSP with a mySQL Backend
+It is recommended to execute the include python script to stand up the initial DB
 ## Dependencies:
 + python mysql module
 + apache-tomcat-8.5.20
