@@ -67,7 +67,7 @@
                             <td><fmt:formatNumber type = "number" 
                                               maxFractionDigits = "2" value = "${precentGainList[status.index]}"/>%</td>
 
-                            <td><fmt:formatNumber type = "currency" value = "${totalReturnList[status.index]}"/></td>
+                            <td><fmt:formatNumber type = "currency" pattern="$#,##0.00;-$#,##0.00" value = "${totalReturnList[status.index]}"/></td>
                             <td><fmt:formatNumber type = "currency" value = "${equityList[status.index]}"/></td>
                             <td><a href="/marketSim?action=sellStock&symbol=${holding.symbolOwned}">Sell</a></td>
                         </tr>
@@ -79,7 +79,7 @@
                             <td></td>
                             <td></td>
 
-                            <td><fmt:formatNumber type = "currency" value = "${portfolioReturn}"/></td>
+                            <td><fmt:formatNumber type = "currency"  pattern="$#,##0.00;-$#,##0.00" value = "${portfolioReturn}"/></td>
                             <td><fmt:formatNumber type = "currency" maxFractionDigits = "2" value = "${portfolioEquity}"/></td>
                             <td></td>
                         </tr>

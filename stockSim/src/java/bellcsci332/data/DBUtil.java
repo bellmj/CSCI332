@@ -26,6 +26,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.simple.JSONArray;
 import org.json.*;
@@ -301,7 +302,12 @@ public class DBUtil {
         }
         return false;
     }
-    public static List<PortfolioHolding> getUsersHoldings(String email){
+
+    public static boolean symbolIsValid(String symbol) {
+        return symbolInNasdaq(symbol) || symbolInNyse(symbol);
+    }
+
+    public static List<PortfolioHolding> getUsersHoldings(String email) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
         PreparedStatement ps = null;
@@ -310,7 +316,7 @@ public class DBUtil {
                 + "ownerEmail = ?;";
         try {
             ps = connection.prepareStatement(query);
-            ps.setString(1,email);
+            ps.setString(1, email);
             rs = ps.executeQuery();
             List<PortfolioHolding> userHoldingsList = new ArrayList<>();
             while (rs.next()) {
@@ -323,7 +329,7 @@ public class DBUtil {
             }
             return userHoldingsList;
         } catch (SQLException e) {
-            Logger.getLogger(DBUtil.class.getName()).log(Level.INFO,null,e);
+            Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, null, e);
             return null;
         } finally {
             try {
@@ -343,7 +349,8 @@ public class DBUtil {
             pool.freeConnection(connection);
         }
     }
-    public static Portfolio getPortfolio(String email){
+
+    public static Portfolio getPortfolio(String email) {
         Portfolio returnPortfolio = new Portfolio();
         returnPortfolio.setOwnerEmail(email);
         ConnectionPool pool = ConnectionPool.getInstance();
@@ -385,6 +392,7 @@ public class DBUtil {
             pool.freeConnection(connection);
         }
     }
+
     public static List<StockPrice> getPriceList(String symbol) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
@@ -661,32 +669,40 @@ public class DBUtil {
 
     public static StockPrice getLatestStockPrice(String symbol) {
         //TODO check the DB to see if an api call is necessary
-        long startTime = System.nanoTime();
-        List<StockPrice> apiPriceList = getStockInfoFromAPI(symbol);
-        Collections.sort(apiPriceList);
-        Collections.reverse(apiPriceList);
-        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call api:" + ((System.nanoTime() - startTime) / 1000000000.0));
-        startTime = System.nanoTime();
-        List<StockPrice> dataBaseList = getPriceList(symbol);
-        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call DB:" + ((System.nanoTime() - startTime) / 1000000000.0));
-        StockPrice returnPrice = apiPriceList.get(0);
-        List<Timestamp> databaseTimeStampList = new ArrayList<>();
-        for (StockPrice databasePrice : dataBaseList) {
-            databaseTimeStampList.add(databasePrice.getTimeStamp());
-        }
-        List<StockPrice> stocksToAddToDB = new ArrayList<>();
-        startTime = System.nanoTime();
-        for (StockPrice apiPrice : apiPriceList) {
-            if (dataBaseList == null || !databaseTimeStampList.contains(apiPrice.getTimeStamp())) {
-                stocksToAddToDB.add(apiPrice);
+        StockPrice returnPrice = null;
+        if (symbolIsValid(symbol)) {
+            if (!symbolIsCurrent(symbol)) {
+                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "getLatestStockPrice called for symbol " + symbol + " symbol is not current");
+                long startTime = System.nanoTime();
+                List<StockPrice> apiPriceList = getStockInfoFromAPI(symbol);
+                Collections.sort(apiPriceList);
+                Collections.reverse(apiPriceList);
+                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call api:" + ((System.nanoTime() - startTime) / 1000000000.0));
+                startTime = System.nanoTime();
+                List<StockPrice> dataBaseList = getPriceList(symbol);
+                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call DB:" + ((System.nanoTime() - startTime) / 1000000000.0));
+                returnPrice = apiPriceList.get(0);
+                List<Timestamp> databaseTimeStampList = new ArrayList<>();
+                for (StockPrice databasePrice : dataBaseList) {
+                    databaseTimeStampList.add(databasePrice.getTimeStamp());
+                }
+                List<StockPrice> stocksToAddToDB = new ArrayList<>();
+                startTime = System.nanoTime();
+                for (StockPrice apiPrice : apiPriceList) {
+                    if (dataBaseList == null || !databaseTimeStampList.contains(apiPrice.getTimeStamp())) {
+                        stocksToAddToDB.add(apiPrice);
+                    } else {
+                        break;
+                    }
+
+                }
+                DBUtil.addStockPrices(stocksToAddToDB);
+                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to add stocks:" + ((System.nanoTime() - startTime) / 1000000000.0));
             } else {
-                break;
+                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "getLatestStockPrice called for symbol " + symbol + " symbol is current");
+                returnPrice = getPriceList(symbol).get(0);
             }
-
         }
-        DBUtil.addStockPrices(stocksToAddToDB);
-        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to add stocks:" + ((System.nanoTime() - startTime) / 1000000000.0));
-
         return returnPrice;
     }
 
@@ -708,22 +724,23 @@ public class DBUtil {
         addUserHolding(newHolding);
         return true;
     }
-    public static boolean sellStock(String userEmail, String symbolToSell,int quantityToSell){
+
+    public static boolean sellStock(String userEmail, String symbolToSell, int quantityToSell) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
         CallableStatement stmt = null;
         try {
             stmt = connection.prepareCall("{CALL sellStock(?,?,?)}");
             stmt.setString(1, userEmail);
-            stmt.setString(2,symbolToSell);
+            stmt.setString(2, symbolToSell);
             stmt.setInt(3, quantityToSell);
             stmt.execute();
         } catch (SQLException ex) {
             Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
             return false;
-        } finally{
-            try{
-                if(stmt != null){
+        } finally {
+            try {
+                if (stmt != null) {
                     stmt.close();
                 }
             } catch (SQLException ex) {
@@ -734,6 +751,7 @@ public class DBUtil {
         }
         return true;
     }
+
     public static void updateUser(User user) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
@@ -743,7 +761,7 @@ public class DBUtil {
                 + "WHERE email = ?;";
         try {
             ps = connection.prepareStatement(query);
-            
+
             ps.setString(1, user.getName());
             ps.setBigDecimal(2, user.getAccountBalance());
             ps.setString(3, user.getPassword());
@@ -802,11 +820,8 @@ public class DBUtil {
             pool.freeConnection(connection);
         }
     }
-    public static boolean stockPriceIsUpToDate(){
-        //todo implement this method
-        return false;
-    }
-    public static int getNumberOfHoldingsForStock(String symbol,String ownerEmail){
+
+    public static int getNumberOfHoldingsForStock(String symbol, String ownerEmail) {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
         PreparedStatement stmt = null;
@@ -814,16 +829,16 @@ public class DBUtil {
         try {
             stmt = connection.prepareStatement("SELECT getNumberOfStockHeld(?,?)");
             stmt.setString(1, symbol);
-            stmt.setString(2,ownerEmail);
+            stmt.setString(2, ownerEmail);
             ResultSet rs = stmt.executeQuery();
-            if(rs.next()){
+            if (rs.next()) {
                 returnVal = rs.getInt(1);
             }
         } catch (SQLException ex) {
             Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
-        } finally{
-            try{
-                if(stmt != null){
+        } finally {
+            try {
+                if (stmt != null) {
                     stmt.close();
                 }
             } catch (SQLException ex) {
@@ -833,24 +848,97 @@ public class DBUtil {
         }
         return returnVal;
     }
-    public static boolean marketsAreOpen() {
+
+    /**
+     * queries the database and determines if an API call is necessary in order
+     * to use the most up to date data
+     *
+     * @param symbol
+     * @return
+     */
+    public static boolean symbolIsCurrent(String symbol) {
+        if (symbolIsValid(symbol)) {
+            GregorianCalendar now = new GregorianCalendar();
+            now.setTimeInMillis(System.currentTimeMillis());
+            now.setTimeZone(TimeZone.getTimeZone("EST"));
+            if (marketsAreTypicallyOpen()) {
+                GregorianCalendar latestStockInDB = new GregorianCalendar();
+                latestStockInDB.setTimeInMillis(getPriceList(symbol).get(0).getTimeStamp().getTime());
+                int stockYear = latestStockInDB.get(Calendar.YEAR);
+                int stockMonth = latestStockInDB.get(Calendar.MONTH);
+                int stockDay = latestStockInDB.get(Calendar.DATE);
+                int stockHour = latestStockInDB.get(Calendar.HOUR_OF_DAY);
+                int stockMinute = latestStockInDB.get(Calendar.MINUTE);
+                if (stockYear == now.get(Calendar.YEAR) //if the latest stock price is from within the minute
+                        && stockMonth == now.get(Calendar.MONTH) && stockDay == now.get(Calendar.DAY_OF_MONTH)
+                        && stockHour == now.get(Calendar.HOUR_OF_DAY) && stockMinute == now.get(Calendar.MINUTE)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {//check to see if we have the price from 16:00 on the last day of trading
+                GregorianCalendar latestStockInDB = new GregorianCalendar();
+                GregorianCalendar latestPriceTime = new GregorianCalendar();
+                latestPriceTime.setTimeInMillis(now.getTimeInMillis());
+                latestPriceTime.setTimeZone(TimeZone.getTimeZone("EST"));
+                latestStockInDB.setTimeInMillis(getPriceList(symbol).get(0).getTimeStamp().getTime());
+
+                switch (now.get(Calendar.DAY_OF_WEEK)) {
+                    case Calendar.SUNDAY:
+                        latestPriceTime.add(Calendar.DATE, -2);
+                        return latestStockInDB.get(Calendar.DATE) == latestPriceTime.get(Calendar.DATE)
+                                && latestStockInDB.get(Calendar.MONTH) == latestPriceTime.get(Calendar.MONTH)
+                                && latestStockInDB.get(Calendar.YEAR) == latestPriceTime.get(Calendar.YEAR)
+                                && latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16;
+                    case Calendar.SATURDAY:
+                        latestPriceTime.add(Calendar.DATE, -1);
+                        return latestStockInDB.get(Calendar.DATE) == latestPriceTime.get(Calendar.DATE)
+                                && latestStockInDB.get(Calendar.MONTH) == latestPriceTime.get(Calendar.MONTH)
+                                && latestStockInDB.get(Calendar.YEAR) == latestPriceTime.get(Calendar.YEAR)
+                                && latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16;
+                    default:
+                        //check to see if there is an entry from either 16:00 that day if it's after 16:00 or from 16:00 the previous day if it's before 9:30
+                        if (now.get(Calendar.HOUR_OF_DAY) > 16 || now.get(Calendar.HOUR_OF_DAY) == 16 && now.get(Calendar.MINUTE) != 0) {
+                            return latestStockInDB.get(Calendar.DATE) == now.get(Calendar.DATE)
+                                    && latestStockInDB.get(Calendar.MONTH) == now.get(Calendar.MONTH)
+                                    && latestStockInDB.get(Calendar.YEAR) == now.get(Calendar.YEAR)
+                                    && latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16;
+                        } else { // it's before 9:30
+                            latestPriceTime.add(Calendar.DATE, -1);
+                            return latestStockInDB.get(Calendar.DATE) == latestPriceTime.get(Calendar.DATE)
+                                    && latestStockInDB.get(Calendar.MONTH) == latestPriceTime.get(Calendar.MONTH)
+                                    && latestStockInDB.get(Calendar.YEAR) == latestPriceTime.get(Calendar.YEAR)
+                                    && latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16;
+                        }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * uses current system time to determine if the nyse & nasdaq are typically
+     * open a this current time, disregarding holidays
+     *
+     * @return boolean value if the stock market is currently open, disregarding
+     * holidays since these values change every year
+     */
+    public static boolean marketsAreTypicallyOpen() {
         GregorianCalendar now = new GregorianCalendar();
         now.setTimeInMillis(System.currentTimeMillis());
+        now.setTimeZone(TimeZone.getTimeZone("EST"));
         int dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
         int hour = now.get(Calendar.HOUR_OF_DAY);
         int minute = now.get(Calendar.MINUTE);
         if (dayOfWeek == Calendar.SUNDAY || dayOfWeek == Calendar.SATURDAY) {
             return false;
-        } else if (hour >= 16) {
+        } else if (hour > 16 || (hour == 4 && minute > 0)) {
             return false;
-        } else if (hour >= 9) {
-            if (hour == 9 && minute < 30) {
-                return false;
-            }
-            //TODO add holidays in here
-            return true;
+        } else if (hour < 9 || (hour == 9 && minute < 30)) {
+            return false;
+
         }
-        //Logger.getLogger(DBUtil.class.getName()).log(Level.INFO,""+now.get(Calendar.HOUR_OF_DAY)+":"+now.get(Calendar.MINUTE)+":"+now.get(Calendar.SECOND));
-        return false;
+        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Current Time EST;" + now.get(Calendar.HOUR_OF_DAY) + ":" + now.get(Calendar.MINUTE) + ":" + now.get(Calendar.SECOND));
+        return true;
     }
 }
