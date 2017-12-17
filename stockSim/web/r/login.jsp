@@ -1,3 +1,10 @@
+<%-- 
+    Document   : login
+    Created on : Dec 9, 2017, 11:05:12 AM
+    Author     : Matthew Bell
+--%>
+
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <!--
 To change this license header, choose License Headers in Project Properties.
@@ -42,7 +49,7 @@ and open the template in the editor.
                     <p>Please enter your email and password to continue.</p> 
                     <form action="j_security_check" method="get" class="inline"> 
                         <div class ="form-group">
-                            <label>Username</label> 
+                            <label>Email</label> 
                             <input type="text" class="form-control" name="j_username">
                         </div>
                         <div class ="form-group">

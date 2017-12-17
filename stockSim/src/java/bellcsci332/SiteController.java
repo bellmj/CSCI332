@@ -93,6 +93,10 @@ public class SiteController extends HttpServlet {
                     = DBUtil.getPortfolio(request.getUserPrincipal().getName()).getPortfolioHoldings();
             List<StockPrice> latestStockPrice = new ArrayList<>();
             List<BigDecimal> precentGainList = new ArrayList<>();
+            List<BigDecimal> totalReturnList = new ArrayList<>();
+            List<BigDecimal> totalEquityValue = new ArrayList<>();
+            BigDecimal portfolioReturn = new BigDecimal(0);
+            BigDecimal portfolioEquity = new BigDecimal(0);
             for (SimplePortfolioHolding ph : userHoldings) {
                 latestStockPrice.add(DBUtil.getLatestStockPrice(ph.getSymbolOwned()));//TODO maybe optimize these method calls
                 BigDecimal precentChange = ph.getAveragePricePerShare().subtract(latestStockPrice.get(latestStockPrice.size() - 1).getClose());
@@ -100,7 +104,19 @@ public class SiteController extends HttpServlet {
                 precentChange = precentChange.divide(ph.getAveragePricePerShare(), 10, RoundingMode.HALF_UP).multiply(new BigDecimal("-100.0"));
 //                Logger.getLogger(SiteController.class.getName()).log(Level.INFO,precentChange.toString());
                 precentGainList.add(precentChange);
+                BigDecimal totalCost = ph.getAveragePricePerShare().multiply(new BigDecimal(ph.getQuantityHeld()));
+                BigDecimal equity = latestStockPrice.get(latestStockPrice.size() - 1).getClose().multiply(new BigDecimal(ph.getQuantityHeld()));
+                BigDecimal totalReturn = equity.subtract(totalCost);
+                totalReturnList.add(totalReturn);
+                portfolioReturn = portfolioReturn.add(totalReturn);
+                totalEquityValue.add(equity);
+                portfolioEquity = portfolioEquity.add(equity);
+      
             }
+            request.setAttribute("portfolioReturn",portfolioReturn);
+            request.setAttribute("portfolioEquity", portfolioEquity);
+            request.setAttribute("totalReturnList", totalReturnList);
+            request.setAttribute("equityList", totalEquityValue);
             request.setAttribute("precentGainList", precentGainList);
             request.setAttribute("holdingsLatestPrice", latestStockPrice);
             request.setAttribute("userHoldings", userHoldings);
