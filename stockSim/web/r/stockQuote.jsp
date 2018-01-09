@@ -41,24 +41,27 @@
                 </ul>
             </div>
         </nav>
-        <div class="container">
+        <div class="container marginTop">
             <p>Latest Stock Price For ${stockPrice.symbol} is <fmt:formatNumber value="${stockPrice.close}" type="currency"/></p>
             <p>You currently have <fmt:formatNumber value="${user.accountBalance}" type="currency"/> in your account</p>
             <p>Would you like to buy some shares?</p>
             <form action="<c:url value='/marketSim'/>" 
                   method="post" class="inline">
                 <div class="form-group">
-                <input type="hidden" name="action" value="buyStock">
-                <input type="hidden" name="userEmail" value="${user.email}">
-                <input type="hidden" name="stockSymbol" value="${stockPrice.symbol}">
-                <label>Shares to Buy:</label>
-                <input type="number" name="sharesToBuy" min="0" 
-                       max="${maxStock}" step="1" value="0" />
+                    <input type="hidden" name="action" value="buyStock">
+                    <input type="hidden" name="userEmail" value="${user.email}">
+                    <input type="hidden" name="stockSymbol" value="${stockPrice.symbol}">
+                    <label>Shares to Buy:</label>
+                    <input type="number" name="sharesToBuy" min="0" 
+                           max="${maxStock}" step="1" value="0" />
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary">Buy Shares</button>
+                </div>
             </form>
+                <div class="buttonContianer">
             <a href="<c:url value='/marketSim?action=displayProfile'/>" class="btn btn-primary">Cancel</a>
+                </div>
         </div>
     </body>
 </html>
