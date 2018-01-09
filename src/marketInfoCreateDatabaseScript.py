@@ -175,6 +175,7 @@ SCRIPTS['sellStockProcedure'] = (
                 "BEGIN "
                     "SELECT 1 INTO @handler_invoked FROM (SELECT 1) AS t; "
                 "END;"
+            " START TRANSACTION;"
         	" SET numberOfStockHeld = (SELECT s1.quantityHeld FROM simpleUserHoldings as s1 WHERE s1.symbol = symbolToSell AND s1.ownerEmail = email LIMIT 1);"
         	" SET latestStockPrice = (SELECT close FROM stockPricesByTheMinute WHERE symbol = symbolToSell ORDER BY TIMESTAMP DESC LIMIT 1);"
             " SET amountToDeductFromAccount = latestStockPrice * sharesToSell;"
@@ -217,6 +218,7 @@ SCRIPTS['sellStockProcedure'] = (
         		" SET amountToDeductFromAccount = 0;"
         	" END IF;"
             " UPDATE Users SET Users.accountBalance = Users.accountBalance + amountToDeductFromAccount WHERE Users.email = email;"
+            " COMMIT;"
         " END")
 
 
