@@ -674,7 +674,9 @@ public class DBUtil {
             if (!symbolIsCurrent(symbol)) {
                 Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "getLatestStockPrice called for symbol " + symbol + " symbol is not current");
                 long startTime = System.nanoTime();
-                List<StockPrice> apiPriceList = getStockInfoFromAPI(symbol);
+                List<StockPrice> apiPriceList;
+                apiPriceList = getStockInfoFromAPI(symbol);
+                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call api:" + ((System.nanoTime() - startTime) / 1000000000.0));
                 Collections.sort(apiPriceList);
                 Collections.reverse(apiPriceList);
                 Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call api:" + ((System.nanoTime() - startTime) / 1000000000.0));
@@ -877,11 +879,14 @@ public class DBUtil {
                     return false;
                 }
             } else {//check to see if we have the price from 16:00 on the last day of trading
+                List<StockPrice> priceList = getPriceList(symbol);
+                if(priceList.size()==0)
+                    return false;
                 GregorianCalendar latestStockInDB = new GregorianCalendar();
                 GregorianCalendar latestPriceTime = new GregorianCalendar();
                 latestPriceTime.setTimeInMillis(now.getTimeInMillis());
                 latestPriceTime.setTimeZone(TimeZone.getTimeZone("EST"));
-                latestStockInDB.setTimeInMillis(getPriceList(symbol).get(0).getTimeStamp().getTime());
+                latestStockInDB.setTimeInMillis(priceList.get(0).getTimeStamp().getTime());
 
                 switch (now.get(Calendar.DAY_OF_WEEK)) {
                     case Calendar.SUNDAY:
