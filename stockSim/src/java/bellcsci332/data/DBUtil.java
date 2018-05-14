@@ -148,8 +148,8 @@ public class DBUtil {
         new SecureRandom().nextBytes(randomSaltByteArray);
         salt = DatatypeConverter.printHexBinary(randomSaltByteArray);
         
-        String query = "INSERT INTO Users(email,name,accountBalance,password) "
-                + "VALUES(?,?,?,?)";
+        String query = "INSERT INTO Users(email, name, accountBalance, password, salt) "
+                + "VALUES(?,?,?,?,?)";
         try {
             ps = connection.prepareStatement(query);
             ps.setString(1, newUser.getEmail());
@@ -693,8 +693,8 @@ public class DBUtil {
                     apiPriceList = getStockInfoFromAPI(symbol);//retry
                     apiCallCount++;
                     if (apiCallCount >= 5){//retry call 4 times then return null
-                        Logger.getLogger(DBUtil.class.getName()).log(Level.WARNING, "API call failed for " + symbol + " five times giving up");
-                        return null;//not sure what issues this will cause
+                        Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, "API call failed for " + symbol + " five times giving up");
+                        return null;//not sure what issues this will cause TODO
                     }
                 }
                 
