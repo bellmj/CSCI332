@@ -22,3 +22,4 @@ nbproject/*
 *.DS_Store
 *.lock
 /stockSim/nbproject/private/
+/PomodoroTimer-master/nbproject/private/
