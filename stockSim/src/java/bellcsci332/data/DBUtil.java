@@ -16,9 +16,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.SecureRandom;
 import java.sql.CallableStatement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -28,8 +28,7 @@ import java.util.List;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import javax.net.ssl.HttpsURLConnection;
-import org.json.simple.JSONArray;
-import org.json.*;
+import javax.xml.bind.DatatypeConverter;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -142,7 +141,13 @@ public class DBUtil {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
         PreparedStatement ps = null;
-
+        
+        //generating a random secure 32 byte salt for each user
+        String salt = "1234567890";//a trival salt for testing
+        byte[] randomSaltByteArray = new byte[32];
+        new SecureRandom().nextBytes(randomSaltByteArray);
+        salt = DatatypeConverter.printHexBinary(randomSaltByteArray);
+        
         String query = "INSERT INTO Users(email,name,accountBalance,password) "
                 + "VALUES(?,?,?,?)";
         try {
@@ -151,6 +156,7 @@ public class DBUtil {
             ps.setString(2, newUser.getName());
             ps.setBigDecimal(3, newUser.getAccountBalance());
             ps.setString(4, newUser.getPassword());
+            ps.setString(5, salt);//inserting our secure random salt into db
             ps.executeUpdate();
         } catch (SQLException e) {
             System.err.println(e);
@@ -640,6 +646,10 @@ public class DBUtil {
             obj = parser.parse(strBuf.toString());
             JSONObject jo = (JSONObject) obj;
             JSONObject timeObject = (JSONObject) jo.get("Time Series (1min)");
+            if (timeObject == null){//trying to prevent a method call on a null
+                                    //time object
+                return null;
+            }
             Object[] keyArray = timeObject.keySet().toArray();
             for (Object k : keyArray) {
                 String key = (String) k;
@@ -676,6 +686,18 @@ public class DBUtil {
                 long startTime = System.nanoTime();
                 List<StockPrice> apiPriceList;
                 apiPriceList = getStockInfoFromAPI(symbol);
+                
+                int apiCallCount = 1;
+                while (apiPriceList == null){//check if we actually got data back
+                    Logger.getLogger(DBUtil.class.getName()).log(Level.WARNING, "API call failed for " + symbol + ". retrying");
+                    apiPriceList = getStockInfoFromAPI(symbol);//retry
+                    apiCallCount++;
+                    if (apiCallCount >= 5){//retry call 4 times then return null
+                        Logger.getLogger(DBUtil.class.getName()).log(Level.WARNING, "API call failed for " + symbol + " five times giving up");
+                        return null;//not sure what issues this will cause
+                    }
+                }
+                
                 Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call api:" + ((System.nanoTime() - startTime) / 1000000000.0));
                 Collections.sort(apiPriceList);
                 Collections.reverse(apiPriceList);
@@ -859,13 +881,17 @@ public class DBUtil {
      * @return
      */
     public static boolean symbolIsCurrent(String symbol) {
+        List<StockPrice> priceList = getPriceList(symbol);
+        if (priceList.size() == 0) {
+            return false;
+        }
         if (symbolIsValid(symbol)) {
             GregorianCalendar now = new GregorianCalendar();
             now.setTimeInMillis(System.currentTimeMillis());
             now.setTimeZone(TimeZone.getTimeZone("EST"));
             if (marketsAreTypicallyOpen()) {
                 GregorianCalendar latestStockInDB = new GregorianCalendar();
-                latestStockInDB.setTimeInMillis(getPriceList(symbol).get(0).getTimeStamp().getTime());
+                latestStockInDB.setTimeInMillis(priceList.get(0).getTimeStamp().getTime());
                 int stockYear = latestStockInDB.get(Calendar.YEAR);
                 int stockMonth = latestStockInDB.get(Calendar.MONTH);
                 int stockDay = latestStockInDB.get(Calendar.DATE);
@@ -879,9 +905,7 @@ public class DBUtil {
                     return false;
                 }
             } else {//check to see if we have the price from 16:00 on the last day of trading
-                List<StockPrice> priceList = getPriceList(symbol);
-                if(priceList.size()==0)
-                    return false;
+
                 GregorianCalendar latestStockInDB = new GregorianCalendar();
                 GregorianCalendar latestPriceTime = new GregorianCalendar();
                 latestPriceTime.setTimeInMillis(now.getTimeInMillis());

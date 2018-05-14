@@ -25,6 +25,7 @@ TABLES['Users'] = (
     "  name varchar(255) NOT NULL,"
     "  accountBalance DECIMAL(14,2) DEFAULT 0.0,"
     "  password varchar(255) NOT NULL,"
+    "  salt varchar(255) NOT NULL,"
     "  PRIMARY KEY (email),"
     "  CONSTRAINT Valid_Email CHECK(email LIKE \"%_@%__.__%\"),"##TODO these constraints aren't enforced by InnoDB and will have to be immplemented
     "  CONSTRAINT Acct_Bal_Not_Neg CHECK(accountBalance >= 0)"##     in a Trigger
@@ -98,8 +99,9 @@ SCRIPTS['CreateRoles'] = (
     "('admin','website administrator'),('user','a standard user');")
 SCRIPTS['InsertAdmins'] = (
     "INSERT into Users ("
-    "email,name,accountBalance,password) "
-    "VALUES ('bellmj@g.cofc.edu','Matt Bell',1000.00,'password');")
+    "email,name,accountBalance,password,salt) "
+    #A trival salt value for the admin for testing TODO replace this salt
+    "VALUES ('bellmj@g.cofc.edu','Matt Bell',1000.00,'password','123456789');")
 SCRIPTS['InsertAdminsRoles'] = (
     "INSERT INTO UserRoles (email,userRole) "
     "VALUES ('bellmj@g.cofc.edu','admin');")

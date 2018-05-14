@@ -4,50 +4,58 @@
         <servlet-name>SiteController</servlet-name>
         <servlet-class>bellcsci332.SiteController</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>AdminController</servlet-name>
+        <servlet-class>bellcsci332.AdminController</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>SiteController</servlet-name>
         <url-pattern>/marketSim</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AdminController</servlet-name>
+        <url-pattern>/admin</url-pattern>
     </servlet-mapping>
     <session-config>
         <session-timeout>
             30
         </session-timeout>
     </session-config>
-    <security-role> 
-        <description>users</description> 
-        <role-name>user</role-name> 
-    </security-role> 
-    <security-role> 
-        <description>administrator</description> 
-        <role-name>admin</role-name> 
-    </security-role> 
-    <security-constraint> 
-        <web-resource-collection> 
-            <web-resource-name>Protected Area</web-resource-name> 
-            <url-pattern>/r/*</url-pattern> 
-        </web-resource-collection> 
-        <auth-constraint> 
-            <role-name>user</role-name> 
-            <role-name>admin</role-name> 
-        </auth-constraint> 
-        <user-data-constraint> 
-            <transport-guarantee>CONFIDENTIAL</transport-guarantee> 
-        </user-data-constraint> 
-    </security-constraint> 
-    <security-constraint> 
-        <web-resource-collection> 
-            <web-resource-name>Protected Area</web-resource-name> 
-            <url-pattern>/*</url-pattern> 
-        </web-resource-collection> 
-        <user-data-constraint> 
-            <transport-guarantee>CONFIDENTIAL</transport-guarantee> 
-        </user-data-constraint> 
-    </security-constraint> 
-    <login-config> 
-        <auth-method>FORM</auth-method> 
-        <form-login-config> 
-            <form-login-page>/r/login.jsp</form-login-page> 
-            <form-error-page>/r/loginerror.jsp</form-error-page> 
-        </form-login-config> 
-    </login-config> 
+    <security-role>
+        <description>users</description>
+        <role-name>user</role-name>
+    </security-role>
+    <security-role>
+        <description>administrator</description>
+        <role-name>admin</role-name>
+    </security-role>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Protected Area</web-resource-name>
+            <url-pattern>/r/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>user</role-name>
+            <role-name>admin</role-name>
+        </auth-constraint>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Protected Area</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+    <login-config>
+        <auth-method>FORM</auth-method>
+        <form-login-config>
+            <form-login-page>/r/login.jsp</form-login-page>
+            <form-error-page>/r/loginerror.jsp</form-error-page>
+        </form-login-config>
+    </login-config>
 </web-app>
