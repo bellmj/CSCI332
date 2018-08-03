@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package bellcsci332.data;
+
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -37,8 +37,8 @@ public class SaltySHA512JDBCRealm extends JDBCRealm {
         String usersSalt = getPasswordSaltForUser(username);
         credentials = usersSalt + credentials + usersSalt;
         String hashedPassword = getPassword(username);
-        String providedHashedPass;
-        if (hashedPassword == null) {
+        String providedHashedPass = null;
+        if (hashedPassword == null || usersSalt == null) {
             return null;
         }
         if (username == null || credentials == null) {
@@ -49,40 +49,65 @@ public class SaltySHA512JDBCRealm extends JDBCRealm {
         try {
             digest = MessageDigest.getInstance("SHA-512");
             byte[] hashedPassByteArray = digest.digest(credentials.getBytes("UTF-8"));
-                providedHashedPass = DatatypeConverter.printHexBinary(hashedPassByteArray);
+            providedHashedPass = DatatypeConverter.printHexBinary(hashedPassByteArray);
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(SaltySHA512JDBCRealm.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnsupportedEncodingException ex) {
             Logger.getLogger(SaltySHA512JDBCRealm.class.getName()).log(Level.SEVERE, null, ex);
         }
-            
-            
-            
-        // Look up the user's credentials
-        String dbCredentials = getPassword(username);
+
+
 
         // Validate the user's credentials
         boolean validated = false;
-        if (hasMessageDigest()) {
-            // Hex hashes should be compared case-insensitive
-            validated = (credentials.equalsIgnoreCase(dbCredentials));
-        } else {
-            validated = (credentials.equals(dbCredentials));
+        if(providedHashedPass != null && providedHashedPass.equalsIgnoreCase(hashedPassword)){
+            validated = true;
         }
 
         ArrayList<String> roles = getRoles(username);
-        
-        // Create and return a suitable Principal for this user
-        return null;//(new GenericPrincipal(this, username, credentials, roles));
+        return (validated?(new GenericPrincipal(username,providedHashedPass,roles)):null);
     }
-
-    private String getPasswordSaltForUser(String username) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+    /**
+     * returns DB salt for a given users email; null if user cannot be found
+     * @param email
+     * @return
+     */
+    private String getPasswordSaltForUser(String email) {
+        Connection connection = dbConnection;
+        PreparedStatement ps = null;
         ResultSet rs = null;
 
-        //TODO query DB for the salt associated with the String username
-        return null;
-    }
+        String query = "SELECT * FROM Users "
+                + "WHERE email = ?";
+        try {
+            ps = connection.prepareStatement(query);
+            ps.setString(1, email);
+            rs = ps.executeQuery();
+            String userSalt = null;
+            if (rs.next()) {
 
+                userSalt = rs.getString("salt");
+
+            }
+            return userSalt;
+        } catch (SQLException e) {
+            System.err.println(e);
+            return null;
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (SQLException ex) {
+
+            }
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException ex) {
+
+            }
+        }
+    }
 }
