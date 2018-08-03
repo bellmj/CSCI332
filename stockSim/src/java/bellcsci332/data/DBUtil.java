@@ -15,9 +15,12 @@ import bellcsci332.business.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.CallableStatement;
 import java.sql.Timestamp;
@@ -141,13 +144,32 @@ public class DBUtil {
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
         PreparedStatement ps = null;
-        
+
         //generating a random secure 32 byte salt for each user
-        String salt = "1234567890";//a trival salt for testing
         byte[] randomSaltByteArray = new byte[32];
         new SecureRandom().nextBytes(randomSaltByteArray);
-        salt = DatatypeConverter.printHexBinary(randomSaltByteArray);
-        
+        String salt = DatatypeConverter.printHexBinary(randomSaltByteArray);
+
+        //hashing users pass with the new generated salt to store in the db
+        newUser.setPassword(salt + newUser.getPassword() + salt);
+        MessageDigest digest;
+        boolean passwordHasBeenHashed = false;
+        try {
+            digest = MessageDigest.getInstance("SHA-512");
+            byte[] hashedPassByteArray = digest.digest(newUser.getPassword().getBytes("UTF-8"));
+            newUser.setPassword(DatatypeConverter.printHexBinary(hashedPassByteArray));
+            passwordHasBeenHashed = true;
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            return;
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+            return;
+        }
+        if (!passwordHasBeenHashed) {
+            return;
+        }
+
         String query = "INSERT INTO Users(email, name, accountBalance, password, salt) "
                 + "VALUES(?,?,?,?,?)";
         try {
@@ -646,8 +668,8 @@ public class DBUtil {
             obj = parser.parse(strBuf.toString());
             JSONObject jo = (JSONObject) obj;
             JSONObject timeObject = (JSONObject) jo.get("Time Series (1min)");
-            if (timeObject == null){//trying to prevent a method call on a null
-                                    //time object
+            if (timeObject == null) {//trying to prevent a method call on a null
+                //time object
                 return null;
             }
             Object[] keyArray = timeObject.keySet().toArray();
@@ -658,11 +680,18 @@ public class DBUtil {
                 //Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, Timestamp.valueOf(key).toString());
                 stockPrice.setTimeStamp(Timestamp.valueOf(key));
                 JSONObject priceObject = (JSONObject) timeObject.get(key);
-                BigDecimal open = new BigDecimal((String) priceObject.get("1. open"));
-                BigDecimal high = new BigDecimal((String) priceObject.get("2. high"));
-                BigDecimal low = new BigDecimal((String) priceObject.get("3. low"));
-                BigDecimal close = new BigDecimal((String) priceObject.get("4. close"));
-                Integer volume = Integer.parseInt((String) priceObject.get("5. volume"));
+
+                String openStr = (String) priceObject.get("1. open");
+                String highStr = (String) priceObject.get("2. high");
+                String lowStr = (String) priceObject.get("3. low");
+                String closeStr = (String) priceObject.get("4. close");
+                String volumeStr = (String) priceObject.get("5. volume");
+
+                BigDecimal open = new BigDecimal(openStr == null ? "0" : openStr);
+                BigDecimal high = new BigDecimal(highStr == null ? "0" : highStr);
+                BigDecimal low = new BigDecimal(lowStr == null ? "0" : lowStr);
+                BigDecimal close = new BigDecimal(closeStr == null ? "0" : closeStr);
+                Integer volume = Integer.parseInt(volumeStr == null ? "0" :volumeStr);
                 stockPrice.setOpen(open);
                 stockPrice.setClose(close);
                 stockPrice.setLow(low);
@@ -686,18 +715,18 @@ public class DBUtil {
                 long startTime = System.nanoTime();
                 List<StockPrice> apiPriceList;
                 apiPriceList = getStockInfoFromAPI(symbol);
-                
+
                 int apiCallCount = 1;
-                while (apiPriceList == null){//check if we actually got data back
+                while (apiPriceList == null) {//check if we actually got data back
                     Logger.getLogger(DBUtil.class.getName()).log(Level.WARNING, "API call failed for " + symbol + ". retrying");
                     apiPriceList = getStockInfoFromAPI(symbol);//retry
                     apiCallCount++;
-                    if (apiCallCount >= 5){//retry call 4 times then return null
+                    if (apiCallCount >= 5) {//retry call 4 times then return null
                         Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, "API call failed for " + symbol + " five times giving up");
                         return null;//not sure what issues this will cause TODO
                     }
                 }
-                
+
                 Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call api:" + ((System.nanoTime() - startTime) / 1000000000.0));
                 Collections.sort(apiPriceList);
                 Collections.reverse(apiPriceList);

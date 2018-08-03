@@ -365,8 +365,8 @@ public class SiteController extends HttpServlet {
         boolean symbolInNasdaq = DBUtil.symbolInNasdaq(selectedSymbol);
         boolean symbolInNyse = DBUtil.symbolInNyse(selectedSymbol);
         if (!(symbolInNasdaq || symbolInNyse)) {
-            //TODO redirect back to getStockQuote.jsp with an error message
-            url = "/getStockQuote.jsp";
+            //TODO redirect back to /r/getStockQuote.jsp with an error message
+            url = "/r/getStockQuote.jsp";
         } else {
 
             //TODO check Nasdaq or NYSEPricesByTheMinute to see if symbol 

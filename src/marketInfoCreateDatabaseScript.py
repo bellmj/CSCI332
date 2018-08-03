@@ -100,8 +100,8 @@ SCRIPTS['CreateRoles'] = (
 SCRIPTS['InsertAdmins'] = (
     "INSERT into Users ("
     "email,name,accountBalance,password,salt) "
-    #A trival salt value for the admin for testing TODO replace this salt
-    "VALUES ('bellmj@g.cofc.edu','Matt Bell',1000.00,'password','123456789');")
+    #A 32 byte hex salt not random but better than a trivial salt TODO
+    "VALUES ('bellmj@g.cofc.edu','Matt Bell',1000.00,'password','622EE36F3A6BCBD8B3FE400D676EED08506C55A55FAFBBFC93C21EB682E6F57F');")
 SCRIPTS['InsertAdminsRoles'] = (
     "INSERT INTO UserRoles (email,userRole) "
     "VALUES ('bellmj@g.cofc.edu','admin');")
