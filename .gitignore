@@ -6,7 +6,7 @@ build/
 
 #netbeans specific
 core
-nbproject/*
+stockSim/nbproject/*
 !nbproject/project.properties
 !nbproject/project.xml
 
