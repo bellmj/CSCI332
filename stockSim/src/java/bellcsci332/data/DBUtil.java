@@ -691,7 +691,7 @@ public class DBUtil {
                 BigDecimal high = new BigDecimal(highStr == null ? "0" : highStr);
                 BigDecimal low = new BigDecimal(lowStr == null ? "0" : lowStr);
                 BigDecimal close = new BigDecimal(closeStr == null ? "0" : closeStr);
-                Integer volume = Integer.parseInt(volumeStr == null ? "0" :volumeStr);
+                Integer volume = Integer.parseInt(volumeStr == null ? "0" : volumeStr);
                 stockPrice.setOpen(open);
                 stockPrice.setClose(close);
                 stockPrice.setLow(low);
@@ -721,6 +721,11 @@ public class DBUtil {
                     Logger.getLogger(DBUtil.class.getName()).log(Level.WARNING, "API call failed for " + symbol + ". retrying");
                     apiPriceList = getStockInfoFromAPI(symbol);//retry
                     apiCallCount++;
+                    try {
+                        Thread.sleep(200);//wait 200ms before retrying
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     if (apiCallCount >= 5) {//retry call 4 times then return null
                         Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, "API call failed for " + symbol + " five times giving up");
                         return null;//not sure what issues this will cause TODO
@@ -730,7 +735,6 @@ public class DBUtil {
                 Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call api:" + ((System.nanoTime() - startTime) / 1000000000.0));
                 Collections.sort(apiPriceList);
                 Collections.reverse(apiPriceList);
-                Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call api:" + ((System.nanoTime() - startTime) / 1000000000.0));
                 startTime = System.nanoTime();
                 List<StockPrice> dataBaseList = getPriceList(symbol);
                 Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Time to call DB:" + ((System.nanoTime() - startTime) / 1000000000.0));
@@ -912,12 +916,13 @@ public class DBUtil {
     public static boolean symbolIsCurrent(String symbol) {
         List<StockPrice> priceList = getPriceList(symbol);
         if (priceList.size() == 0) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, null, "Symbol " + symbol + " not current;price list empty");
             return false;
         }
         if (symbolIsValid(symbol)) {
             GregorianCalendar now = new GregorianCalendar();
             now.setTimeInMillis(System.currentTimeMillis());
-            now.setTimeZone(TimeZone.getTimeZone("EST"));
+            now.setTimeZone(TimeZone.getTimeZone("America/New_York"));
             if (marketsAreTypicallyOpen()) {
                 GregorianCalendar latestStockInDB = new GregorianCalendar();
                 latestStockInDB.setTimeInMillis(priceList.get(0).getTimeStamp().getTime());
@@ -929,44 +934,55 @@ public class DBUtil {
                 if (stockYear == now.get(Calendar.YEAR) //if the latest stock price is from within the minute
                         && stockMonth == now.get(Calendar.MONTH) && stockDay == now.get(Calendar.DAY_OF_MONTH)
                         && stockHour == now.get(Calendar.HOUR_OF_DAY) && stockMinute == now.get(Calendar.MINUTE)) {
+                    Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE,
+                            null, "Symbol  " + symbol + " current; stock price "
+                            + "is from within the minute");
                     return true;
                 } else {
                     return false;
                 }
-            } else {//check to see if we have the price from 16:00 on the last day of trading
+            } else {//check to see if we have the price from 15:59 on the last day of trading
 
                 GregorianCalendar latestStockInDB = new GregorianCalendar();
                 GregorianCalendar latestPriceTime = new GregorianCalendar();
                 latestPriceTime.setTimeInMillis(now.getTimeInMillis());
-                latestPriceTime.setTimeZone(TimeZone.getTimeZone("EST"));
+                latestPriceTime.setTimeZone(TimeZone.getTimeZone("America/New_York"));
                 latestStockInDB.setTimeInMillis(priceList.get(0).getTimeStamp().getTime());
 
                 switch (now.get(Calendar.DAY_OF_WEEK)) {
                     case Calendar.SUNDAY:
                         latestPriceTime.add(Calendar.DATE, -2);
-                        return latestStockInDB.get(Calendar.DATE) == latestPriceTime.get(Calendar.DATE)
+                        return latestStockInDB.get(Calendar.DATE) == latestPriceTime.get(Calendar.DATE)//return if there is a stock price for 3:59
                                 && latestStockInDB.get(Calendar.MONTH) == latestPriceTime.get(Calendar.MONTH)
                                 && latestStockInDB.get(Calendar.YEAR) == latestPriceTime.get(Calendar.YEAR)
-                                && latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16;
+                                && (latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16
+                                    || (latestStockInDB.get(Calendar.HOUR_OF_DAY) == 15
+                                        && latestStockInDB.get(Calendar.MINUTE) >= 58));
                     case Calendar.SATURDAY:
                         latestPriceTime.add(Calendar.DATE, -1);
                         return latestStockInDB.get(Calendar.DATE) == latestPriceTime.get(Calendar.DATE)
                                 && latestStockInDB.get(Calendar.MONTH) == latestPriceTime.get(Calendar.MONTH)
                                 && latestStockInDB.get(Calendar.YEAR) == latestPriceTime.get(Calendar.YEAR)
-                                && latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16;
+                                && (latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16
+                                    || (latestStockInDB.get(Calendar.HOUR_OF_DAY) == 15
+                                        && latestStockInDB.get(Calendar.MINUTE) >= 58));
                     default:
                         //check to see if there is an entry from either 16:00 that day if it's after 16:00 or from 16:00 the previous day if it's before 9:30
                         if (now.get(Calendar.HOUR_OF_DAY) > 16 || now.get(Calendar.HOUR_OF_DAY) == 16 && now.get(Calendar.MINUTE) != 0) {
                             return latestStockInDB.get(Calendar.DATE) == now.get(Calendar.DATE)
                                     && latestStockInDB.get(Calendar.MONTH) == now.get(Calendar.MONTH)
                                     && latestStockInDB.get(Calendar.YEAR) == now.get(Calendar.YEAR)
-                                    && latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16;
+                                    && (latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16
+                                        || (latestStockInDB.get(Calendar.HOUR_OF_DAY) == 15
+                                            && latestStockInDB.get(Calendar.MINUTE) >= 58));
                         } else { // it's before 9:30
                             latestPriceTime.add(Calendar.DATE, -1);
                             return latestStockInDB.get(Calendar.DATE) == latestPriceTime.get(Calendar.DATE)
                                     && latestStockInDB.get(Calendar.MONTH) == latestPriceTime.get(Calendar.MONTH)
                                     && latestStockInDB.get(Calendar.YEAR) == latestPriceTime.get(Calendar.YEAR)
-                                    && latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16;
+                                    && (latestStockInDB.get(Calendar.HOUR_OF_DAY) == 16
+                                        || (latestStockInDB.get(Calendar.HOUR_OF_DAY) == 15
+                                            && latestStockInDB.get(Calendar.MINUTE) >= 58));
                         }
                 }
             }
@@ -984,19 +1000,23 @@ public class DBUtil {
     public static boolean marketsAreTypicallyOpen() {
         GregorianCalendar now = new GregorianCalendar();
         now.setTimeInMillis(System.currentTimeMillis());
-        now.setTimeZone(TimeZone.getTimeZone("EST"));
+        now.setTimeZone(TimeZone.getTimeZone("America/New_York"));
         int dayOfWeek = now.get(Calendar.DAY_OF_WEEK);
         int hour = now.get(Calendar.HOUR_OF_DAY);
         int minute = now.get(Calendar.MINUTE);
+        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Current Time New York;" + now.get(Calendar.HOUR_OF_DAY) + ":" + now.get(Calendar.MINUTE) + ":" + now.get(Calendar.SECOND));
         if (dayOfWeek == Calendar.SUNDAY || dayOfWeek == Calendar.SATURDAY) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "markets closed");
             return false;
-        } else if (hour > 16 || (hour == 4 && minute > 0)) {
+        } else if (hour >= 16) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "markets closed");
             return false;
         } else if (hour < 9 || (hour == 9 && minute < 30)) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "markets closed");
             return false;
 
         }
-        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "Current Time EST;" + now.get(Calendar.HOUR_OF_DAY) + ":" + now.get(Calendar.MINUTE) + ":" + now.get(Calendar.SECOND));
+        Logger.getLogger(DBUtil.class.getName()).log(Level.INFO, "markets open");
         return true;
     }
 }

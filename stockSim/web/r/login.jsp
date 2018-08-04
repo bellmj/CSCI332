@@ -47,7 +47,7 @@ and open the template in the editor.
                 </div>
                 <div class="col">
                     <p>Please enter your email and password to continue.</p> 
-                    <form action="j_security_check" method="get" class="inline"> 
+                    <form action="j_security_check" method="POST" class="inline"> 
                         <div class ="form-group">
                             <label>Email</label> 
                             <input type="text" class="form-control" name="j_username">

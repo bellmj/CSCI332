@@ -22,6 +22,7 @@ import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -373,17 +374,26 @@ public class SiteController extends HttpServlet {
             // is in table and up to date
             StockPrice latestStockPrice = DBUtil.getLatestStockPrice(
                     selectedSymbol);
-            request.setAttribute("stockPrice", latestStockPrice);
-            String userEmail = request.getUserPrincipal().getName();
-            User user = DBUtil.getUser(userEmail);
-            int maxStock = user.getAccountBalance().divide(
-                    latestStockPrice.getClose(), 10, RoundingMode.HALF_UP)
-                    .intValue();
-//            Logger.getLogger(SiteController.class.getName())
-                //.log(Level.INFO,"max Stock is:" + maxStock);
-            request.setAttribute("maxStock",maxStock);
-            request.setAttribute("user", user);
-            url = "/r/stockQuote.jsp";
+            if( latestStockPrice == null){//error in getting price; goto quote
+                url = "/r/getStockQuote.jsp";
+            }else{
+                request.setAttribute("stockPrice", latestStockPrice);
+                Principal userPrincipal = request.getUserPrincipal();
+                if( userPrincipal == null){
+                    url = "/r/welcomeuser.jsp";//redirect user to login to be authed
+                }else {//if user is logged in and authenticated
+                    String userEmail = userPrincipal.getName();
+                    User user = DBUtil.getUser(userEmail);
+                    int maxStock = user.getAccountBalance().divide(
+                            latestStockPrice.getClose(), 10, RoundingMode.HALF_UP)
+                            .intValue();
+                    //            Logger.getLogger(SiteController.class.getName())
+                    //.log(Level.INFO,"max Stock is:" + maxStock);
+                    request.setAttribute("maxStock",maxStock);
+                    request.setAttribute("user", user);
+                    url = "/r/stockQuote.jsp";
+                }
+            }
         }
 
         return url;
