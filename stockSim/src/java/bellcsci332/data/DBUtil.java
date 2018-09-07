@@ -19,6 +19,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -645,9 +646,12 @@ public class DBUtil {
             }
         } catch (MalformedURLException e) {
             Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
-        } catch (IOException e) {
+        } catch (UnknownHostException e){
             Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
-        } finally {
+        }catch (IOException e) {
+            Logger.getLogger(DBUtil.class.getName()).log(Level.SEVERE, null, e);
+        }
+        finally {
             if (reader != null) {
                 try {
                     reader.close();
@@ -715,7 +719,9 @@ public class DBUtil {
                 long startTime = System.nanoTime();
                 List<StockPrice> apiPriceList;
                 apiPriceList = getStockInfoFromAPI(symbol);
-
+                if(apiPriceList.size() == 0){
+                    return null;
+                }
                 int apiCallCount = 1;
                 while (apiPriceList == null) {//check if we actually got data back
                     Logger.getLogger(DBUtil.class.getName()).log(Level.WARNING, "API call failed for " + symbol + ". retrying");
@@ -768,7 +774,8 @@ public class DBUtil {
         User buyer = DBUtil.getUser(userEmail);
         BigDecimal newAccountBalance = buyer.getAccountBalance().subtract(
                 latestStockPrice.getClose().multiply(new BigDecimal(quantityToBuy)));
-        if (newAccountBalance.compareTo(BigDecimal.ZERO) < 0) {
+        if (newAccountBalance.compareTo(BigDecimal.ZERO) < 0 || latestStockPrice == null) {
+            //add a more graceful failure mode here and let the user know what goign on
             return false;
         }
         buyer.setAccountBalance(newAccountBalance);
@@ -809,7 +816,7 @@ public class DBUtil {
         return true;
     }
 
-    public static void updateUser(User user) {
+    public static void updateUser(User user) { //todo update this method to use salt correctly
         ConnectionPool pool = ConnectionPool.getInstance();
         Connection connection = pool.getConnection();
         PreparedStatement ps = null;

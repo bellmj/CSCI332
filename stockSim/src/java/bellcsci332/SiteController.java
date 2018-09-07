@@ -23,6 +23,7 @@ import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -45,11 +46,10 @@ public class SiteController extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse 
-            response)
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
-        Logger.getLogger(SiteController.class.getName()).log(Level.INFO, 
+        Logger.getLogger(SiteController.class.getName()).log(Level.INFO,
                 action);
         String url = "null";
         if (action == null) {
@@ -78,7 +78,7 @@ public class SiteController extends HttpServlet {
                 request.setAttribute("companies", nyseCompanyInfo);
                 url = "/r/admin/displayNyseCompanyInfo.jsp";
             } else {
-                url ="/index.html";
+                url = "/index.html";
             }
 
         } else if (action.equals("adminViewNasdaqInfoTable")) {
@@ -117,9 +117,13 @@ public class SiteController extends HttpServlet {
             BigDecimal portfolioReturn = new BigDecimal(0);
             BigDecimal portfolioEquity = new BigDecimal(0);
             for (SimplePortfolioHolding ph : userHoldings) {
-                latestStockPrice.add(DBUtil.getLatestStockPrice(
-                        ph.getSymbolOwned()));
-                        //TODO maybe optimize these method calls
+                StockPrice latestQuote = DBUtil.getLatestStockPrice(
+                        ph.getSymbolOwned());
+                if (latestQuote == null) {
+                    latestQuote = new StockPrice(ph.getSymbolOwned(), new Timestamp(0), new BigDecimal(0), new BigDecimal(0), new BigDecimal(0), new BigDecimal(0), 0);
+                }
+                latestStockPrice.add(latestQuote);
+                //TODO maybe optimize these method calls
                 BigDecimal precentChange = ph.getAveragePricePerShare()
                         .subtract(latestStockPrice.get(latestStockPrice.size()
                                 - 1).getClose());
@@ -141,9 +145,9 @@ public class SiteController extends HttpServlet {
                 portfolioReturn = portfolioReturn.add(totalReturn);
                 totalEquityValue.add(equity);
                 portfolioEquity = portfolioEquity.add(equity);
-      
+
             }
-            request.setAttribute("portfolioReturn",portfolioReturn);
+            request.setAttribute("portfolioReturn", portfolioReturn);
             request.setAttribute("portfolioEquity", portfolioEquity);
             request.setAttribute("totalReturnList", totalReturnList);
             request.setAttribute("equityList", totalEquityValue);
@@ -177,29 +181,31 @@ public class SiteController extends HttpServlet {
                 List<StockPrice> latestStockPrice = new ArrayList<>();
                 List<BigDecimal> precentGainList = new ArrayList<>();
                 for (SimplePortfolioHolding ph : userHoldings) {
-                    latestStockPrice.add(DBUtil.getLatestStockPrice(
-                            ph.getSymbolOwned()));
-                            //TODO maybe optimize these method calls
+                    StockPrice latestQuote = DBUtil.getLatestStockPrice(
+                            ph.getSymbolOwned());
+                    if (latestQuote == null) {
+                        latestQuote = new StockPrice(ph.getSymbolOwned(), new Timestamp(0), new BigDecimal(0), new BigDecimal(0), new BigDecimal(0), new BigDecimal(0), 0);
+                    }
+                    latestStockPrice.add(latestQuote);
+                    //TODO maybe optimize these method calls
                     BigDecimal precentChange = ph.getAveragePricePerShare()
                             .subtract(latestStockPrice.get(latestStockPrice.size()
                                     - 1).getClose());
-    //                Logger.getLogger(SiteController.class.getName()).
-                        //log(Level.INFO,precentChange.toString());
+                    //                Logger.getLogger(SiteController.class.getName()).
+                    //log(Level.INFO,precentChange.toString());
                     precentChange = precentChange.divide(
                             ph.getAveragePricePerShare(), 10, RoundingMode.HALF_UP)
                             .multiply(new BigDecimal("-100.0"));
-    //                Logger.getLogger(SiteController.class.getName()).
-                        //log(Level.INFO,precentChange.toString());
+                    //                Logger.getLogger(SiteController.class.getName()).
+                    //log(Level.INFO,precentChange.toString());
                     precentGainList.add(precentChange);
                 }
                 request.setAttribute("precentGainList", precentGainList);
                 request.setAttribute("holdingsLatestPrice", latestStockPrice);
                 request.setAttribute("userHoldings", userHoldings);
-                request.setAttribute("user", DBUtil.getUser((String) 
-                        request.getParameter("email")));
+                request.setAttribute("user", DBUtil.getUser((String) request.getParameter("email")));
                 url = "/r/admin/viewUserHoldings.jsp";
-            }
-            else {
+            } else {
                 url = "/index.html";
             }
         } else if (action.equals("adminEnterUserMode")) {
@@ -233,7 +239,7 @@ public class SiteController extends HttpServlet {
      * @throws IOException if an I/O error occurs
      */
     @Override
-    protected void doPost(HttpServletRequest request, 
+    protected void doPost(HttpServletRequest request,
             HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
@@ -286,12 +292,12 @@ public class SiteController extends HttpServlet {
             String newPasswordConfirm = request.getParameter(
                     "newPasswordConfirm");
             if (!newPassword.equals(newPasswordConfirm)) {
-                request.setAttribute("newPasswordErrorMessage", 
+                request.setAttribute("newPasswordErrorMessage",
                         "New passwords do not match");
                 url = "/r/changePass.jsp";
             }
             if (!oldPass.equals(user.getPassword())) {
-                request.setAttribute("oldPasswordErrorMessage", 
+                request.setAttribute("oldPasswordErrorMessage",
                         "User password Invalid");
                 url = "/r/changePass.jsp";
             }
@@ -304,7 +310,7 @@ public class SiteController extends HttpServlet {
                     request.setAttribute("user", user);
                     url = "/r/profile.jsp";
                 } else {
-                    request.setAttribute("adminHomeLink", 
+                    request.setAttribute("adminHomeLink",
                             "/r/admin/adminHome.jsp");
                     request.setAttribute("adminHomeText", "Admin Home");
                     request.setAttribute("user", user);
@@ -317,7 +323,7 @@ public class SiteController extends HttpServlet {
                 .forward(request, response);
     }
 
-    private String sellStock(HttpServletRequest request, 
+    private String sellStock(HttpServletRequest request,
             HttpServletResponse response) {
         String url = "/index.html";
         String symbolToSell = request.getParameter("symbolToSell");
@@ -338,7 +344,7 @@ public class SiteController extends HttpServlet {
         return url;
     }
 
-    private String buyStock(HttpServletRequest request, 
+    private String buyStock(HttpServletRequest request,
             HttpServletResponse response) {
         String url = "/index.html";
         String selectedSymbol = request.getParameter("stockSymbol");
@@ -359,7 +365,7 @@ public class SiteController extends HttpServlet {
         return url;
     }
 
-    private String getQuote(HttpServletRequest request, 
+    private String getQuote(HttpServletRequest request,
             HttpServletResponse response) {
         String selectedSymbol = request.getParameter("symbol");
         String url = "/index.html";
@@ -374,14 +380,14 @@ public class SiteController extends HttpServlet {
             // is in table and up to date
             StockPrice latestStockPrice = DBUtil.getLatestStockPrice(
                     selectedSymbol);
-            if( latestStockPrice == null){//error in getting price; goto quote
+            if (latestStockPrice == null) {//error in getting price; goto quote
                 url = "/r/getStockQuote.jsp";
-            }else{
+            } else {
                 request.setAttribute("stockPrice", latestStockPrice);
                 Principal userPrincipal = request.getUserPrincipal();
-                if( userPrincipal == null){
+                if (userPrincipal == null) {
                     url = "/r/welcomeuser.jsp";//redirect user to login to be authed
-                }else {//if user is logged in and authenticated
+                } else {//if user is logged in and authenticated
                     String userEmail = userPrincipal.getName();
                     User user = DBUtil.getUser(userEmail);
                     int maxStock = user.getAccountBalance().divide(
@@ -389,7 +395,7 @@ public class SiteController extends HttpServlet {
                             .intValue();
                     //            Logger.getLogger(SiteController.class.getName())
                     //.log(Level.INFO,"max Stock is:" + maxStock);
-                    request.setAttribute("maxStock",maxStock);
+                    request.setAttribute("maxStock", maxStock);
                     request.setAttribute("user", user);
                     url = "/r/stockQuote.jsp";
                 }
@@ -399,15 +405,14 @@ public class SiteController extends HttpServlet {
         return url;
     }
 
-    private String signUp(HttpServletRequest request, HttpServletResponse 
-            response) {
+    private String signUp(HttpServletRequest request, HttpServletResponse response) {
         User newUser;
         String url = "/index.html";
-        
+
         MessageDigest digest;
         String hashedPass = "";
         String hashedPassConfirm = "";
-       
+
         try {// try to hash the provided passwords
             //TODO generate random salts here and load them into the DB
             digest = MessageDigest.getInstance("SHA-512");
@@ -418,7 +423,7 @@ public class SiteController extends HttpServlet {
             hashedPass = DatatypeConverter.printHexBinary(hashedPassByteArray);
             hashedPassConfirm = DatatypeConverter.printHexBinary(
                     hashedPassConfirmByteArray);
-            
+
         } catch (NoSuchAlgorithmException ex) {
             Logger.getLogger(SiteController.class.getName()).log(
                     Level.SEVERE, null, ex);
@@ -426,18 +431,16 @@ public class SiteController extends HttpServlet {
             Logger.getLogger(SiteController.class.getName()).log(
                     Level.SEVERE, null, ex);
         }
-	Logger.getLogger(SiteController.class.getName()).log(
-                Level.INFO,"Hashed Pass:" + hashedPass);
+        Logger.getLogger(SiteController.class.getName()).log(
+                Level.INFO, "Hashed Pass:" + hashedPass);
 
         String userName = (String) request.getParameter("name");
         String password = (String) request.getParameter("password");
         String passConfirm = (String) request.getParameter("passwordConfirm");
         String userEmail = (String) request.getParameter("email");
-        BigDecimal initialAccountBalance = new BigDecimal((String) 
-                request.getParameter("initialBalance"));
+        BigDecimal initialAccountBalance = new BigDecimal((String) request.getParameter("initialBalance"));
 
-        
-        newUser = new User(userEmail,userName,initialAccountBalance,password);
+        newUser = new User(userEmail, userName, initialAccountBalance, password);
 
         if (userName.matches(DBUtil.NAME_REGEX) && userEmail.matches(
                 DBUtil.EMAIL_REGEX)
@@ -450,15 +453,15 @@ public class SiteController extends HttpServlet {
             if (!userName.matches(DBUtil.NAME_REGEX)) {
                 request.setAttribute("nameErrorMessage",
                         "(Name must include first and last name only seperated "
-                                + "by a space)");
+                        + "by a space)");
             }
             if (!userEmail.matches(DBUtil.EMAIL_REGEX)) {
-                request.setAttribute("emailErrorMessage", 
+                request.setAttribute("emailErrorMessage",
                         "(Please enter a valid email)");
             }
-            if (!hashedPass.equals(hashedPassConfirm) || 
-                    hashedPass.equals("")) {
-                request.setAttribute("passwordErrorMessage", 
+            if (!hashedPass.equals(hashedPassConfirm)
+                    || hashedPass.equals("")) {
+                request.setAttribute("passwordErrorMessage",
                         "(Passwords don't match)");
             }
             request.setAttribute("user", newUser);
