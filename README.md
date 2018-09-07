@@ -35,6 +35,11 @@ ALPHA_VANTAGE_API_KEY
 + JSTL 1.2.1
 + MySQL JDBC Driver5.1.23
 
+
+If you have any questions or comments feel free to email me directly at matt@matthewbellsoftware.com
+
+
+
+
 This software is published under GNU GENERAL PUBLIC LICENSE Version 3. A copy
 of this license is provided in /License.txt
-If you have any questions or comments feel free to email me directly at matt@matthewbellsoftware.com
