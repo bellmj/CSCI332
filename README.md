@@ -5,7 +5,7 @@ This web application includes a custom build realm for tomcat authentication. Th
 
 A python script is included in /src/marketInfoCreateDatabaseScript.py that will stand up the inital database required for this application to work. It is required to modify the user, password, and host fields of the mySql connector in marketInfoCreateDatabaseScript.py for each new mySql server. These fields are flagged with comments. 
 
-It is reccomended to use the above python file to stand up the inital DB, however it is possiable to recreate the scheemas using the included mySQLdump in /SQLDump/stockSimDUMP.sql.
+It is reccomended to use the above python file to stand up the inital DB, however it is possiable to recreate the scheemas using the included mySQL dump in /SQLDump/stockSimDUMP.sql.
 
 The connectionURL and connectionPassword fields in stockSim/web/META-INF/context.xml must be updated to reflect the mySql server that you are using.
 
