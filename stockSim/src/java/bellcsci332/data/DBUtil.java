@@ -43,9 +43,11 @@ import org.json.simple.parser.ParseException;
  */
 public class DBUtil {
 
-    public final static String NAME_REGEX = "([a-z]|[A-Z]|'|-)+ ([a-z]|[A-Z]|'|-)+";
+    public static final String NAME_REGEX = "([a-z]|[A-Z]|'|-)+ ([a-z]|[A-Z]|'|-)+";
     public static final String EMAIL_REGEX = "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@"
             + "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";//Taken from http://www.mkyong.com/regular-expressions/how-to-validate-email-address-with-regular-expression/
+    private static final String ALPHA_VANTAGE_API_KEY = "IRW9";
+    //^^Please modify this field if you plan to build this project yourself
 
     /**
      * a method to obtain a user from the database using their email
@@ -627,7 +629,8 @@ public class DBUtil {
         BufferedReader reader = null;
         try {
             //Declare the connection to weather api url
-            URL url = new URL("https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=" + symbol + "&interval=1min&outputsize=compact&apikey=IRW9");
+            URL url = new URL("https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=" 
+                    + symbol + "&interval=1min&outputsize=compact&apikey=" + ALPHA_VANTAGE_API_KEY);
             conn = (HttpsURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Accept", "application/json");
