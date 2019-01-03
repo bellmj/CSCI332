@@ -49,11 +49,13 @@ public class SiteController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
+        Logger.getLogger(SiteController.class.getName())
+                  .log(Level.INFO,"Action is " + action);
         Logger.getLogger(SiteController.class.getName()).log(Level.INFO,
                 action);
         String url = "null";
         if (action == null) {
-            url = "/index.html";
+            url = "index.html";
         } else if (action.equals("signup")) {
             url = "/signup.jsp";
         } else if (action.equals("login")) {
@@ -99,7 +101,7 @@ public class SiteController extends HttpServlet {
                 url = "/r/admin/displayUsers.jsp";
             } else {
                 url = "/index.html";
-            }
+            }   
 
         } else if (action.equals("stockQuoteHome")) {
             request.setAttribute("symbols", DBUtil.getAllTickerSymbols());

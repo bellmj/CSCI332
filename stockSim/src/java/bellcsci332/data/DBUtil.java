@@ -722,7 +722,7 @@ public class DBUtil {
                 long startTime = System.nanoTime();
                 List<StockPrice> apiPriceList;
                 apiPriceList = getStockInfoFromAPI(symbol);
-                if(apiPriceList.size() == 0){
+                if(apiPriceList != null && apiPriceList.size() == 0){
                     return null;
                 }
                 int apiCallCount = 1;
@@ -824,15 +824,16 @@ public class DBUtil {
         Connection connection = pool.getConnection();
         PreparedStatement ps = null;
 
-        String query = "UPDATE Users SET name = ?,accountBalance = ?,password = ?"
+        String query = "UPDATE Users SET name = ?,accountBalance = ?"//,password = ?"
                 + "WHERE email = ?;";
         try {
             ps = connection.prepareStatement(query);
 
             ps.setString(1, user.getName());
             ps.setBigDecimal(2, user.getAccountBalance());
-            ps.setString(3, user.getPassword());
-            ps.setString(4, user.getEmail());
+            //ps.setString(3, user.getPassword());TODO implement salting here so
+            //we can change user passwords
+            ps.setString(/*4 TODO*/3, user.getEmail());
             ps.executeUpdate();
         } catch (SQLException e) {
             System.err.println(e);

@@ -30,7 +30,7 @@ and open the template in the editor.
             <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <a class="navbar-brand" href="#">StockSimulator2000</a>
+            <a class="navbar-brand" href="/about.html">WeTrade</a>
 
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav mr-auto">
@@ -47,7 +47,7 @@ and open the template in the editor.
                 </div>
                 <div class="col">
                     <p>Please enter your email and password to continue</p> 
-                    <form action="j_security_check" method="get" class="inline"> 
+                    <form action="j_security_check" method="POST" class="inline"> 
                         <div class ="form-group">
                             <label >Email</label> 
                             <input type="text" class="form-control" name="j_username"> 

@@ -16,6 +16,12 @@ table {
 .marginTop{
     margin-top: 4em;
 }
+.loginMarginTop{
+    margin-top: 10%;
+}
+.oneEmTopMargin{
+    margin-top: 1em;
+}
 .buttonContianer{
     margin-top:1em;
 }
